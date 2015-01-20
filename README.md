@@ -24,20 +24,20 @@ gradually destroyed by projectiles from the aliens and player.
 How To Play
 ----
  - If you don't have [Python](https://www.python.org/downloads/) or [Pygame](http://www.pygame.org/download.shtml) installed, you can simply double click the .exe file to play the game.
-   **(Note:)** The .exe file needs to stay in the same directory as the sounds, images, and font folders.
+   **Note:** *The .exe file needs to stay in the same directory as the sounds, images, and font folders.*
    
  - If you have the correct version of Python and Pygame installed, you can run the program in the command prompt / terminal.
  ``` c
  	cd SpaceInvaders
  	python spaceinvaders.py
  ```
- **(Note:)** If you're using Python 3, replace the command "python" with "python3"
+ **Note:** If you're using Python 3, replace the command "python" with "python3"
 
 
 Contact
 ----
 Thanks for checking out my game and I hope you enjoy it! Feel free to contact me.
 
-- v1.0 release 10/31/2014
+- v1.0 released 10/31/2014
 - Created by Lee Robinson at Iowa State Univeristy.
 - leerob@iastate.edu
