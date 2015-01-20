@@ -23,12 +23,15 @@ gradually destroyed by projectiles from the aliens and player.
 
 How To Play
 ----
- - If you don't have Python or Pygame installed, you can simply double click the .exe file to play the game.
-   Note - The .exe file needs to stay in the same directory as the sounds, images, and font folders.
+ - If you don't have [Python](https://www.python.org/downloads/) or [Pygame](http://www.pygame.org/download.shtml) installed, you can simply double click the .exe file to play the game.
+   **(Note:)** The .exe file needs to stay in the same directory as the sounds, images, and font folders.
    
- - If you have the correct version of Python and Pygame installed, you can run the program by opening up the 
-   command prompt / terminal and switching to the Space Invaders directory using cd (Ex. cd desktop then cd SpaceInvaders)
-   and then typing "python spaceinvaders.py" or "python3 spaceinvaders.py" depending on your version of Python.
+ - If you have the correct version of Python and Pygame installed, you can run the program in the command prompt / terminal.
+ ``` c
+ 	cd SpaceInvaders
+ 	python spaceinvaders.py
+ ```
+ **(Note:)** If you're using Python 3, replace the command "python" with "python3"
 
 
 Contact
