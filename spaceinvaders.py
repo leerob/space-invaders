@@ -289,7 +289,7 @@ class SpaceInvaders(object):
 		self.gameOver = False
 		self.enemyposition = 65
 
-	def reset(self, score, lives):
+	def reset(self, score, lives, newGame=False):
 		self.player = Ship()
 		self.playerGroup = sprite.Group(self.player)
 		self.explosionsGroup = sprite.Group()
@@ -299,7 +299,9 @@ class SpaceInvaders(object):
 		self.enemyBullets = sprite.Group()
 		self.reset_lives()
 		self.make_enemies()
-		self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
+		# only create blockers on a new game, not a new round
+		if newGame:
+			self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
 		self.keys = key.get_pressed()
 		self.clock = time.Clock()
 		self.timer = time.get_ticks()
@@ -568,7 +570,7 @@ class SpaceInvaders(object):
 	def main(self):
 		while True:
 			if self.mainScreen:
-				self.reset(0, 3)
+				self.reset(0, 3, True)
 				self.screen.blit(self.background, (0,0))
 				self.titleText.draw(self.screen)
 				self.titleText2.draw(self.screen)
