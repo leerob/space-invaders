@@ -329,7 +329,6 @@ class SpaceInvaders(object):
 		self.life1 = Life(715, 3)
 		self.life2 = Life(742, 3)
 		self.life3 = Life(769, 3)
-		self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 		
 		if self.lives == 3:
 			self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
