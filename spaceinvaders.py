@@ -333,7 +333,6 @@ class SpaceInvaders(object):
 		if self.lives == 3:
 			self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 		elif self.lives == 2:
-			self.lives -= 1
 			self.livesGroup = sprite.Group(self.life1, self.life2)
 		elif self.lives == 1:
 			self.livesGroup = sprite.Group(self.life1)
