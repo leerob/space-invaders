@@ -299,7 +299,7 @@ class SpaceInvaders(object):
 		self.enemyBullets = sprite.Group()
 		self.reset_lives()
 		self.make_enemies()
-		# only create blockers on a new game, not a new round
+		# Only create blockers on a new game, not a new round
 		if newGame:
 			self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
 		self.keys = key.get_pressed()
