@@ -287,12 +287,12 @@ class SpaceInvaders(object):
 		self.startGame = False
 		self.mainScreen = True
 		self.gameOver = False
-		# initial value for a new game
-		self.enemypositiondefault = 65
-		# counter for enemy starting position (increased each new round)
-		self.enemypositionstart = self.enemypositiondefault
-		# current enemy starting position
-		self.enemyposition = self.enemypositionstart
+		# Initial value for a new game
+		self.enemyPositionDefault = 65
+		# Counter for enemy starting position (increased each new round)
+		self.enemyPositionStart = self.enemyPositionDefault
+		# Current enemy starting position
+		self.enemyPosition = self.enemyPositionStart
 
 	def reset(self, score, lives):
 		self.player = Ship()
@@ -303,7 +303,7 @@ class SpaceInvaders(object):
 		self.mysteryGroup = sprite.Group(self.mysteryShip)
 		self.enemyBullets = sprite.Group()
 		self.reset_lives()
-		self.enemyposition = self.enemypositionstart
+		self.enemyPosition = self.enemyPositionStart
 		self.make_enemies()
 		self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
 		self.keys = key.get_pressed()
@@ -400,7 +400,7 @@ class SpaceInvaders(object):
 			for column in range(10):
 				enemy = Enemy(row, column)
 				enemy.rect.x = 157 + (column * 50)
-				enemy.rect.y = self.enemyposition + (row * 45)
+				enemy.rect.y = self.enemyPosition + (row * 45)
 				enemies.add(enemy)
 		
 		self.enemies = enemies
@@ -597,8 +597,8 @@ class SpaceInvaders(object):
 						self.livesGroup.update(self.keys)
 						self.check_input()
 					if currentTime - self.gameTimer > 3000:
-						# move enemies closer to bottom
-						self.enemypositionstart += 35
+						# Move enemies closer to bottom
+						self.enemyPositionStart += 35
 						self.reset(self.score, self.lives)
 						self.make_enemies()
 						self.gameTimer += 3000
@@ -623,8 +623,8 @@ class SpaceInvaders(object):
 	
 			elif self.gameOver:
 				currentTime = time.get_ticks()
-				# reset enemy starting position
-				self.enemypositionstart = self.enemypositiondefault
+				# Reset enemy starting position
+				self.enemyPositionStart = self.enemyPositionDefault
 				self.create_game_over(currentTime)
 
 			display.update()
