@@ -287,9 +287,14 @@ class SpaceInvaders(object):
 		self.startGame = False
 		self.mainScreen = True
 		self.gameOver = False
-		self.enemyposition = 65
+		# Initial value for a new game
+		self.enemyPositionDefault = 65
+		# Counter for enemy starting position (increased each new round)
+		self.enemyPositionStart = self.enemyPositionDefault
+		# Current enemy starting position
+		self.enemyPosition = self.enemyPositionStart
 
-	def reset(self, score, lives):
+	def reset(self, score, lives, newGame=False):
 		self.player = Ship()
 		self.playerGroup = sprite.Group(self.player)
 		self.explosionsGroup = sprite.Group()
@@ -298,8 +303,11 @@ class SpaceInvaders(object):
 		self.mysteryGroup = sprite.Group(self.mysteryShip)
 		self.enemyBullets = sprite.Group()
 		self.reset_lives(lives)
+		self.enemyPosition = self.enemyPositionStart
 		self.make_enemies()
-		self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
+		# Only create blockers on a new game, not a new round
+		if newGame:
+			self.allBlockers = sprite.Group(self.make_blockers(0), self.make_blockers(1), self.make_blockers(2), self.make_blockers(3))
 		self.keys = key.get_pressed()
 		self.clock = time.Clock()
 		self.timer = time.get_ticks()
@@ -404,7 +412,7 @@ class SpaceInvaders(object):
 			for column in range(10):
 				enemy = Enemy(row, column)
 				enemy.rect.x = 157 + (column * 50)
-				enemy.rect.y = self.enemyposition + (row * 45)
+				enemy.rect.y = self.enemyPosition + (row * 45)
 				enemies.add(enemy)
 		
 		self.enemies = enemies
@@ -578,7 +586,7 @@ class SpaceInvaders(object):
 	def main(self):
 		while True:
 			if self.mainScreen:
-				self.reset(0, 3)
+				self.reset(0, 3, True)
 				self.screen.blit(self.background, (0,0))
 				self.titleText.draw(self.screen)
 				self.titleText2.draw(self.screen)
@@ -601,8 +609,9 @@ class SpaceInvaders(object):
 						self.livesGroup.update(self.keys)
 						self.check_input()
 					if currentTime - self.gameTimer > 3000:
+						# Move enemies closer to bottom
+						self.enemyPositionStart += 35
 						self.reset(self.score, self.lives)
-						self.enemyposition += 35
 						self.make_enemies()
 						self.gameTimer += 3000
 				else:
@@ -626,6 +635,8 @@ class SpaceInvaders(object):
 	
 			elif self.gameOver:
 				currentTime = time.get_ticks()
+				# Reset enemy starting position
+				self.enemyPositionStart = self.enemyPositionDefault
 				self.create_game_over(currentTime)
 
 			display.update()
