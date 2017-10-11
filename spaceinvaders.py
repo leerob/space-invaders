@@ -302,7 +302,7 @@ class SpaceInvaders(object):
 		self.mysteryShip = Mystery()
 		self.mysteryGroup = sprite.Group(self.mysteryShip)
 		self.enemyBullets = sprite.Group()
-		self.reset_lives()
+		self.reset_lives(lives)
 		self.enemyPosition = self.enemyPositionStart
 		self.make_enemies()
 		# Only create blockers on a new game, not a new round
@@ -324,21 +324,31 @@ class SpaceInvaders(object):
 		self.killedArray = [[0] * 10 for x in range(5)]
 
 	def make_blockers(self, number):
-	   blockerGroup = sprite.Group()
-	   for row in range(4):
-		   for column in range(9):
-			   blocker = Blocker(10, GREEN, row, column)
-			   blocker.rect.x = 50 + (200 * number) + (column * blocker.width)
-			   blocker.rect.y = 450 + (row * blocker.height)
-			   blockerGroup.add(blocker)
-	   return blockerGroup
-
-	def reset_lives(self):
+		blockerGroup = sprite.Group()
+		for row in range(4):
+			for column in range(9):
+				blocker = Blocker(10, GREEN, row, column)
+				blocker.rect.x = 50 + (200 * number) + (column * blocker.width)
+				blocker.rect.y = 450 + (row * blocker.height)
+				blockerGroup.add(blocker)
+		return blockerGroup
+	
+	def reset_lives_sprites(self):
 		self.life1 = Life(715, 3)
 		self.life2 = Life(742, 3)
 		self.life3 = Life(769, 3)
-		self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 		
+		if self.lives == 3:
+			self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
+		elif self.lives == 2:
+			self.livesGroup = sprite.Group(self.life1, self.life2)
+		elif self.lives == 1:
+			self.livesGroup = sprite.Group(self.life1)
+	
+	def reset_lives(self, lives):
+		self.lives = lives
+		self.reset_lives_sprites()
+	
 	def create_audio(self):
 		self.sounds = {}
 		for sound_name in ["shoot", "shoot2", "invaderkilled", "mysterykilled", "shipexplosion"]:
