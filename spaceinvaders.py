@@ -413,31 +413,32 @@ class SpaceInvaders(object):
 							self.bullets.add(rightbullet)
 							self.allSprites.add(self.bullets)
 							self.sounds["shoot2"].play()
-	def get_action(self, ship):
+	def get_action(self):
 		self.keys = key.get_pressed()
 		for e in event.get():
 			if e.type == QUIT:
 				sys.exit()
 		action = randint(0,2)
 		if(action == 0):
-			if len(self.bullets) == 0 and self.shipAlive:
-				if self.score < 1000:
-					bullet = Bullet(self.player.rect.x+23, self.player.rect.y+5, -1, 15, "laser", "center")
-					self.bullets.add(bullet)
-					self.allSprites.add(self.bullets)
-					self.sounds["shoot"].play()
-				else:
-					leftbullet = Bullet(self.player.rect.x+8, self.player.rect.y+5, -1, 15, "laser", "left")
-					rightbullet = Bullet(self.player.rect.x+38, self.player.rect.y+5, -1, 15, "laser", "right")
-					self.bullets.add(leftbullet)
-					self.bullets.add(rightbullet)
-					self.allSprites.add(self.bullets)
-					self.sounds["shoot2"].play()
+			self.shoot()
 		if(action == 1):
 			self.player.move_left()
 		if(action == 2):
 			self.player.move_right()
-
+	def shoot(self):
+		if len(self.bullets) == 0 and self.shipAlive:
+			if self.score < 1000:
+				bullet = Bullet(self.player.rect.x+23, self.player.rect.y+5, -1, 15, "laser", "center")
+				self.bullets.add(bullet)
+				self.allSprites.add(self.bullets)
+				self.sounds["shoot"].play()
+			else:
+				leftbullet = Bullet(self.player.rect.x+8, self.player.rect.y+5, -1, 15, "laser", "left")
+				rightbullet = Bullet(self.player.rect.x+38, self.player.rect.y+5, -1, 15, "laser", "right")
+				self.bullets.add(leftbullet)
+				self.bullets.add(rightbullet)
+				self.allSprites.add(self.bullets)
+				self.sounds["shoot2"].play()
 	def make_enemies(self):
 		enemies = sprite.Group()
 		for row in range(5):
@@ -639,7 +640,8 @@ class SpaceInvaders(object):
 						self.nextRoundText.draw(self.screen)
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
-						self.get_action()
+						self.check_input()
+						# self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
 						self.enemyPositionStart += 35
@@ -655,8 +657,8 @@ class SpaceInvaders(object):
 					self.scoreText.draw(self.screen)
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
-					
-					self.get_action(self.allSprites)
+					self.check_input()
+					# self.get_action()
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
