@@ -4,6 +4,7 @@
 #!/usr/bin/env python
 from pygame import *
 import sys
+import argparse
 from random import shuffle, randrange, choice, randint
 
 #           R    G    B
@@ -425,6 +426,12 @@ class SpaceInvaders(object):
 			self.player.move_left()
 		if(action == 2):
 			self.player.move_right()
+	def get_genetic_action(self):
+		self.keys = key.get_pressed()
+		for e in event.get():
+			if e.type == QUIT:
+				sys.exit()
+
 	def shoot(self):
 		if len(self.bullets) == 0 and self.shipAlive:
 			if self.score < 1000:
@@ -616,9 +623,12 @@ class SpaceInvaders(object):
 			if e.type == QUIT:
 				sys.exit()
 
-	def main(self):
+	def main(self, it):
+		i = 0
+		scoreList = set()
 		while True:
 			if self.mainScreen:
+				i +=1
 				self.reset(0, 3, True)
 				self.screen.blit(self.background, (0,0))
 				self.titleText.draw(self.screen)
@@ -628,6 +638,8 @@ class SpaceInvaders(object):
 				self.enemy3Text.draw(self.screen)
 				self.enemy4Text.draw(self.screen)
 				self.create_main_menu()
+				self.startGame = True
+				self.mainScreen = False
 
 			elif self.startGame:
 				if len(self.enemies) == 0:
@@ -640,8 +652,8 @@ class SpaceInvaders(object):
 						self.nextRoundText.draw(self.screen)
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
-						self.check_input()
-						# self.get_action()
+						# self.check_input()
+						self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
 						self.enemyPositionStart += 35
@@ -657,8 +669,8 @@ class SpaceInvaders(object):
 					self.scoreText.draw(self.screen)
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
-					self.check_input()
-					# self.get_action()
+					# self.check_input()
+					self.get_action()
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
@@ -673,11 +685,20 @@ class SpaceInvaders(object):
 				# Reset enemy starting position
 				self.enemyPositionStart = self.enemyPositionDefault
 				self.create_game_over(currentTime)
-
+				scoreList.add((i, self.score))
+				if(i >= it):
+					break
+				
 			display.update()
 			self.clock.tick(60)
+		print(scoreList)
+
 				
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-i','--iterations',type=int)
+	args = parser.parse_args()
 	game = SpaceInvaders()
-	game.main()
+	print(args.iterations)
+	game.main(args.iterations)
