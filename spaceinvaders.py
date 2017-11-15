@@ -498,17 +498,17 @@ class SpaceInvaders(object):
 	def get_state(self):
 		state_array = np.zeros([80,60])
 		for x in self.allSprites.sprites():
-			if type(x).__name__ == 'Enemy':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 1
 			if type(x).__name__ == 'Ship':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 3
-			if type(x).__name__ == 'Bullet':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 1
+			if type(x).__name__ == 'Enemy':
 				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 2
+			if type(x).__name__ == 'Bullet':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 3
 			if type(x).__name__ == 'Blocker':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 5
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 4
 			if type(x).__name__ == 'Mystery':
 				if mth.floor(x.rect.center[0] / 10) >= 0 and mth.floor(x.rect.center[1] / 10) >= 0 and mth.floor(x.rect.center[0] / 10) < 80 and mth.floor(x.rect.center[1] / 10) <= 60:
-					state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 4
+					state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 5
 		return state_array
 
 
@@ -720,5 +720,4 @@ if __name__ == '__main__':
 	parser.add_argument('-i','--iterations',type=int, required=True)
 	args = parser.parse_args()
 	game = SpaceInvaders()
-	print(args.iterations)
 	game.main(args.iterations)
