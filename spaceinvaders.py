@@ -2,9 +2,11 @@
 # Created by Lee Robinson
 
 #!/usr/bin/env python
+import math as mth
 from pygame import *
 import sys
 import argparse
+import numpy as np
 from random import shuffle, randrange, choice, randint
 
 #           R    G    B
@@ -493,6 +495,22 @@ class SpaceInvaders(object):
 		score = scores[row]
 		self.score += score
 		return score
+	def get_state(self):
+		state_array = np.zeros([80,60])
+		for x in self.allSprites.sprites():
+			if type(x).__name__ == 'Enemy':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 1
+			if type(x).__name__ == 'Ship':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 3
+			if type(x).__name__ == 'Bullet':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 2
+			if type(x).__name__ == 'Blocker':
+				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 5
+			if type(x).__name__ == 'Mystery':
+				if mth.floor(x.rect.center[0] / 10) >= 0 and mth.floor(x.rect.center[1] / 10) >= 0 and mth.floor(x.rect.center[0] / 10) < 80 and mth.floor(x.rect.center[1] / 10) <= 60:
+					state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 4
+		return state_array
+
 
 	def create_main_menu(self):
 		self.enemy1 = IMAGES["enemy3_1"]
@@ -653,6 +671,7 @@ class SpaceInvaders(object):
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
 						# self.check_input()
+						self.get_state()
 						self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
@@ -670,6 +689,7 @@ class SpaceInvaders(object):
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
 					# self.check_input()
+					self.get_state()
 					self.get_action()
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
 					self.explosionsGroup.update(self.keys, currentTime)
@@ -697,7 +717,7 @@ class SpaceInvaders(object):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-i','--iterations',type=int)
+	parser.add_argument('-i','--iterations',type=int, required=True)
 	args = parser.parse_args()
 	game = SpaceInvaders()
 	print(args.iterations)
