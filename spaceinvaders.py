@@ -476,7 +476,7 @@ class SpaceInvaders(object):
 		row = max(rowList)
 		for enemy in self.enemies:
 			if enemy.column == column and enemy.row == row:
-				if (time.get_ticks() - self.timer) > 700:
+				if (time.get_ticks() - self.timer) > 200: # changed from original 700 (affects enemy bullet amount)
 					self.enemyBullets.add(Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5, "enemylaser", "center"))
 					self.allSprites.add(self.enemyBullets)
 					self.timer = time.get_ticks() 
@@ -578,9 +578,9 @@ class SpaceInvaders(object):
 						self.lives -= 1
 						self.livesGroup.remove(self.life1)
 						self.allSprites.remove(self.life1)
-					elif self.lives == 0:
 						self.gameOver = True
 						self.startGame = False
+
 					self.sounds["shipexplosion"].play()
 					explosion = Explosion(playerShip.rect.x, playerShip.rect.y, 0, True, False, 0)
 					self.explosionsGroup.add(explosion)
@@ -629,7 +629,7 @@ class SpaceInvaders(object):
 		while True:
 			if self.mainScreen:
 				i +=1
-				self.reset(0, 3, True)
+				self.reset(0, 1, True)
 				self.screen.blit(self.background, (0,0))
 				self.titleText.draw(self.screen)
 				self.titleText2.draw(self.screen)
