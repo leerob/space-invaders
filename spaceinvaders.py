@@ -495,20 +495,28 @@ class SpaceInvaders(object):
 		score = scores[row]
 		self.score += score
 		return score
-	def get_state(self):
-		state_array = np.zeros([80,60])
-		for x in self.allSprites.sprites():
-			if type(x).__name__ == 'Ship':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 1
-			if type(x).__name__ == 'Enemy':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 2
-			if type(x).__name__ == 'Bullet':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 3
-			if type(x).__name__ == 'Blocker':
-				state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 4
-			if type(x).__name__ == 'Mystery':
-				if mth.floor(x.rect.center[0] / 10) >= 0 and mth.floor(x.rect.center[1] / 10) >= 0 and mth.floor(x.rect.center[0] / 10) < 80 and mth.floor(x.rect.center[1] / 10) <= 60:
-					state_array[mth.floor(x.rect.center[0] / 10)-1][mth.floor(x.rect.center[1] / 10)-1] = 5
+	def get_state(self, factor):
+		width = mth.floor(800/factor)
+		height = mth.floor(600/factor)
+		state_array = np.zeros([width,height],dtype=np.int)
+		for spr in self.allSprites.sprites():
+			x = mth.floor(spr.rect.center[0] / factor)-1
+			y = mth.floor(spr.rect.center[1] / factor)-1
+			if type(spr).__name__ == 'Ship':
+				state_array[x][y] = 1
+			if type(spr).__name__ == 'Enemy':
+				state_array[x][y] = 2
+			if type(spr).__name__ == 'Bullet':
+				state_array[x][y] = 3
+			if type(spr).__name__ == 'Mystery':
+				if x >= 0 and y >= 0 and x < width and y <= height:
+					state_array[x][y] = 4
+		for blocker in self.allBlockers:
+			x = mth.floor(blocker.rect.center[0] / factor)-1
+			y = mth.floor(blocker.rect.center[1] / factor)-1
+			state_array[x][y] = 5
+		# np.savetxt('state.txt', state_array, fmt='%i')
+		print(np.transpose(state_array))
 		return state_array
 
 
@@ -671,7 +679,7 @@ class SpaceInvaders(object):
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
 						# self.check_input()
-						self.get_state()
+						self.get_state(25)
 						self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
@@ -689,7 +697,7 @@ class SpaceInvaders(object):
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
 					# self.check_input()
-					self.get_state()
+					self.get_state(25)
 					self.get_action()
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
 					self.explosionsGroup.update(self.keys, currentTime)
