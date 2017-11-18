@@ -507,7 +507,10 @@ class SpaceInvaders(object):
 			if type(spr).__name__ == 'Enemy':
 				state_array[x][y] = 2
 			if type(spr).__name__ == 'Bullet':
-				state_array[x][y] = 3
+				if(spr.direction == 1):
+					state_array[x][y] = 3
+				else:
+					state_array[x][y] = 6
 			if type(spr).__name__ == 'Mystery':
 				if x >= 0 and y >= 0 and x < width and y <= height:
 					state_array[x][y] = 4
@@ -518,7 +521,6 @@ class SpaceInvaders(object):
 		# np.savetxt('state.txt', state_array, fmt='%i')
 		print(np.transpose(state_array))
 		return state_array
-
 
 	def create_main_menu(self):
 		self.enemy1 = IMAGES["enemy3_1"]
