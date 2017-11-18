@@ -518,8 +518,6 @@ class SpaceInvaders(object):
 			x = mth.floor(blocker.rect.center[0] / factor)-1
 			y = mth.floor(blocker.rect.center[1] / factor)-1
 			state_array[x][y] = 5
-		# np.savetxt('state.txt', state_array, fmt='%i')
-		print(np.transpose(state_array))
 		return state_array
 
 	def create_main_menu(self):
