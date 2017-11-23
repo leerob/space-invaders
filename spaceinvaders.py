@@ -633,17 +633,7 @@ class SpaceInvaders(object):
 			self.shipAlive = True
 
 	def create_game_over(self, currentTime):
-		self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer < 750:
-			self.gameOverText.draw(self.screen)
-		if currentTime - self.timer > 750 and currentTime - self.timer < 1500:
-			self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer > 1500 and currentTime - self.timer < 2250:
-			self.gameOverText.draw(self.screen)
-		if currentTime - self.timer > 2250 and currentTime - self.timer < 2750:
-			self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer > 3000:
-			self.mainScreen = True
+		self.mainScreen = True
 		
 		for e in event.get():
 			if e.type == QUIT:
