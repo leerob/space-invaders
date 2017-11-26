@@ -489,7 +489,7 @@ class SpaceInvaders(object):
 				  2: 20,
 				  3: 10,
 				  4: 10,
-				  5: choice([50, 100, 150, 300])
+				  5: 150 # choice([50, 100, 150, 300])
 				 }
 					  
 		score = scores[row]
