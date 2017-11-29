@@ -126,6 +126,8 @@ class Enemy(sprite.Sprite):
 
 			self.timer += self.moveTime
 		game.screen.blit(self.image, self.rect)
+		if self.rect.y < 0 or self.rect.y > 600:
+			self.kill()
 
 	def check_column_deletion(self, killedRow, killedColumn, killedArray):
 		if killedRow != -1 and killedColumn != -1:
