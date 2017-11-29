@@ -697,8 +697,9 @@ class SpaceInvaders(object):
 
 					if len(self.enemies) > 0:
 						self.make_enemies_shoot()
-	
-			elif self.gameOver:
+					else:
+						self.gameOver = True
+			if self.gameOver:
 				currentTime = time.get_ticks()
 				# Reset enemy starting position
 				self.enemyPositionStart = self.enemyPositionDefault
