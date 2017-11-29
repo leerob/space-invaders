@@ -699,6 +699,7 @@ class SpaceInvaders(object):
 						self.make_enemies_shoot()
 					else:
 						self.gameOver = True
+
 			if self.gameOver:
 				currentTime = time.get_ticks()
 				# Reset enemy starting position
@@ -707,7 +708,6 @@ class SpaceInvaders(object):
 				scoreList.add((i, self.score))
 				if(i >= it):
 					break
-				
 			display.update()
 			self.clock.tick(60)
 		print(scoreList)
