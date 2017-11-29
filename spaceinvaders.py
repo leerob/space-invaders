@@ -2,9 +2,12 @@
 # Created by Lee Robinson
 
 #!/usr/bin/env python
+import math as mth
 from pygame import *
 import sys
-from random import shuffle, randrange, choice
+import argparse
+import numpy as np
+from random import shuffle, randrange, choice, randint
 
 #           R    G    B
 WHITE 	= (255, 255, 255)
@@ -32,6 +35,14 @@ class Ship(sprite.Sprite):
 		if keys[K_LEFT] and self.rect.x > 10:
 			self.rect.x -= self.speed
 		if keys[K_RIGHT] and self.rect.x < 740:
+			self.rect.x += self.speed
+		game.screen.blit(self.image, self.rect)
+	def move_left(self):
+		if self.rect.x > 10:
+			self.rect.x -= self.speed
+		game.screen.blit(self.image, self.rect)
+	def move_right(self):
+		if self.rect.x < 740:
 			self.rect.x += self.speed
 		game.screen.blit(self.image, self.rect)
 
@@ -115,6 +126,8 @@ class Enemy(sprite.Sprite):
 
 			self.timer += self.moveTime
 		game.screen.blit(self.image, self.rect)
+		if self.rect.y > 600:
+			self.kill()
 
 	def check_column_deletion(self, killedRow, killedColumn, killedArray):
 		if killedRow != -1 and killedColumn != -1:
@@ -405,7 +418,38 @@ class SpaceInvaders(object):
 							self.bullets.add(rightbullet)
 							self.allSprites.add(self.bullets)
 							self.sounds["shoot2"].play()
+	def get_action(self):
+		self.keys = key.get_pressed()
+		for e in event.get():
+			if e.type == QUIT:
+				sys.exit()
+		action = randint(0,2)
+		if(action == 0):
+			self.shoot()
+		if(action == 1):
+			self.player.move_left()
+		if(action == 2):
+			self.player.move_right()
+	def get_genetic_action(self):
+		self.keys = key.get_pressed()
+		for e in event.get():
+			if e.type == QUIT:
+				sys.exit()
 
+	def shoot(self):
+		if len(self.bullets) == 0 and self.shipAlive:
+			if self.score < 1000:
+				bullet = Bullet(self.player.rect.x+23, self.player.rect.y+5, -1, 15, "laser", "center")
+				self.bullets.add(bullet)
+				self.allSprites.add(self.bullets)
+				self.sounds["shoot"].play()
+			else:
+				leftbullet = Bullet(self.player.rect.x+8, self.player.rect.y+5, -1, 15, "laser", "left")
+				rightbullet = Bullet(self.player.rect.x+38, self.player.rect.y+5, -1, 15, "laser", "right")
+				self.bullets.add(leftbullet)
+				self.bullets.add(rightbullet)
+				self.allSprites.add(self.bullets)
+				self.sounds["shoot2"].play()
 	def make_enemies(self):
 		enemies = sprite.Group()
 		for row in range(5):
@@ -436,7 +480,7 @@ class SpaceInvaders(object):
 		row = max(rowList)
 		for enemy in self.enemies:
 			if enemy.column == column and enemy.row == row:
-				if (time.get_ticks() - self.timer) > 700:
+				if (time.get_ticks() - self.timer) > 200: # changed from original 700 (affects enemy bullet amount)
 					self.enemyBullets.add(Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5, "enemylaser", "center"))
 					self.allSprites.add(self.enemyBullets)
 					self.timer = time.get_ticks() 
@@ -447,12 +491,36 @@ class SpaceInvaders(object):
 				  2: 20,
 				  3: 10,
 				  4: 10,
-				  5: choice([50, 100, 150, 300])
+				  5: 150 # choice([50, 100, 150, 300])
 				 }
 					  
 		score = scores[row]
 		self.score += score
 		return score
+	def get_state(self, factor):
+		width = mth.floor(800/factor)
+		height = mth.floor(600/factor)
+		state_array = np.zeros([width,height],dtype=np.int)
+		for spr in self.allSprites.sprites():
+			x = mth.floor(spr.rect.center[0] / factor)-1
+			y = mth.floor(spr.rect.center[1] / factor)-1
+			if type(spr).__name__ == 'Ship':
+				state_array[x][y] = 1
+			if type(spr).__name__ == 'Enemy':
+				state_array[x][y] = 2
+			if type(spr).__name__ == 'Bullet':
+				if(spr.direction == 1):
+					state_array[x][y] = 3
+				else:
+					state_array[x][y] = 6
+			if type(spr).__name__ == 'Mystery':
+				if x >= 0 and y >= 0 and x < width and y <= height:
+					state_array[x][y] = 4
+		for blocker in self.allBlockers:
+			x = mth.floor(blocker.rect.center[0] / factor)-1
+			y = mth.floor(blocker.rect.center[1] / factor)-1
+			state_array[x][y] = 5
+		return state_array
 
 	def create_main_menu(self):
 		self.enemy1 = IMAGES["enemy3_1"]
@@ -538,9 +606,9 @@ class SpaceInvaders(object):
 						self.lives -= 1
 						self.livesGroup.remove(self.life1)
 						self.allSprites.remove(self.life1)
-					elif self.lives == 0:
 						self.gameOver = True
 						self.startGame = False
+
 					self.sounds["shipexplosion"].play()
 					explosion = Explosion(playerShip.rect.x, playerShip.rect.y, 0, True, False, 0)
 					self.explosionsGroup.add(explosion)
@@ -567,26 +635,19 @@ class SpaceInvaders(object):
 			self.shipAlive = True
 
 	def create_game_over(self, currentTime):
-		self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer < 750:
-			self.gameOverText.draw(self.screen)
-		if currentTime - self.timer > 750 and currentTime - self.timer < 1500:
-			self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer > 1500 and currentTime - self.timer < 2250:
-			self.gameOverText.draw(self.screen)
-		if currentTime - self.timer > 2250 and currentTime - self.timer < 2750:
-			self.screen.blit(self.background, (0,0))
-		if currentTime - self.timer > 3000:
-			self.mainScreen = True
+		self.mainScreen = True
 		
 		for e in event.get():
 			if e.type == QUIT:
 				sys.exit()
 
-	def main(self):
+	def main(self, it):
+		i = 0
+		scoreList = set()
 		while True:
 			if self.mainScreen:
-				self.reset(0, 3, True)
+				i +=1
+				self.reset(0, 1, True)
 				self.screen.blit(self.background, (0,0))
 				self.titleText.draw(self.screen)
 				self.titleText2.draw(self.screen)
@@ -595,6 +656,8 @@ class SpaceInvaders(object):
 				self.enemy3Text.draw(self.screen)
 				self.enemy4Text.draw(self.screen)
 				self.create_main_menu()
+				self.startGame = True
+				self.mainScreen = False
 
 			elif self.startGame:
 				if len(self.enemies) == 0:
@@ -607,7 +670,9 @@ class SpaceInvaders(object):
 						self.nextRoundText.draw(self.screen)
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
-						self.check_input()
+						# self.check_input()
+						self.get_state(25)
+						self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
 						self.enemyPositionStart += 35
@@ -623,7 +688,9 @@ class SpaceInvaders(object):
 					self.scoreText.draw(self.screen)
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
-					self.check_input()
+					# self.check_input()
+					self.get_state(25)
+					self.get_action()
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
@@ -632,17 +699,28 @@ class SpaceInvaders(object):
 
 					if len(self.enemies) > 0:
 						self.make_enemies_shoot()
-	
+					else:
+						self.gameOver = True
+						self.startGame = False
+
 			elif self.gameOver:
 				currentTime = time.get_ticks()
 				# Reset enemy starting position
 				self.enemyPositionStart = self.enemyPositionDefault
 				self.create_game_over(currentTime)
-
+				scoreList.add((i, self.score))
+				if(i >= it):
+					break
+				
 			display.update()
 			self.clock.tick(60)
+		print(scoreList)
+
 				
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-i','--iterations',type=int, required=True)
+	args = parser.parse_args()
 	game = SpaceInvaders()
-	game.main()
+	game.main(args.iterations)
