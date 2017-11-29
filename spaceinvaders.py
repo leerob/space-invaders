@@ -688,29 +688,18 @@ class SpaceInvaders(object):
 					self.scoreText.draw(self.screen)
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
-					# print state map before agent makes move
 					self.get_action()
-
-					# after agent makes move
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
-
-					# after sprites make move
-					# TODO: investigate speed of bullets  and enemies move. might want to make it easier to predict next states by making all the sprites update only 1 frame before
-
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
 					self.create_new_ship(self.makeNewShip, currentTime)
 					self.update_enemy_speed()
 
-					print("test of self.enemies: ", self.enemies)
 					if len(self.enemies) > 0:
 						self.make_enemies_shoot()
 					else:
-						self.gameOver = True  # TODO: remove?
-						print("length = zero. setting game over to true")
+						self.gameOver = True
 
-			# TODO: absolutely  make this its own function -- game over = true just resets the enemie ships and scores -- does not acutally end and print the score
-			# TODO: change from elif to if
 			if self.gameOver:
 				print("game over!")
 				currentTime = time.get_ticks()
