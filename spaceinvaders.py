@@ -644,11 +644,13 @@ class SpaceInvaders(object):
 	def main(self, it):
 		i = 0
 		scoreList = set()
+		scoreSum = 0
+
 		while True:
 			if self.mainScreen:
-				i +=1
+				i += 1
 				self.reset(0, 1, True)
-				self.screen.blit(self.background, (0,0))
+				self.screen.blit(self.background, (0, 0))
 				self.titleText.draw(self.screen)
 				self.titleText2.draw(self.screen)
 				self.enemy1Text.draw(self.screen)
@@ -662,16 +664,14 @@ class SpaceInvaders(object):
 			elif self.startGame:
 				if len(self.enemies) == 0:
 					currentTime = time.get_ticks()
-					if currentTime - self.gameTimer < 3000:              
-						self.screen.blit(self.background, (0,0))
+					if currentTime - self.gameTimer < 3000:
+						self.screen.blit(self.background, (0, 0))
 						self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
 						self.scoreText.draw(self.screen)
 						self.scoreText2.draw(self.screen)
 						self.nextRoundText.draw(self.screen)
 						self.livesText.draw(self.screen)
 						self.livesGroup.update(self.keys)
-						# self.check_input()
-						self.get_state(25)
 						self.get_action()
 					if currentTime - self.gameTimer > 3000:
 						# Move enemies closer to bottom
@@ -681,40 +681,50 @@ class SpaceInvaders(object):
 						self.gameTimer += 3000
 				else:
 					currentTime = time.get_ticks()
-					self.play_main_music(currentTime)              
-					self.screen.blit(self.background, (0,0))
+					self.play_main_music(currentTime)
+					self.screen.blit(self.background, (0, 0))
 					self.allBlockers.update(self.screen)
 					self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
 					self.scoreText.draw(self.screen)
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
-					# self.check_input()
-					self.get_state(25)
+					# print state map before agent makes move
 					self.get_action()
+
+					# after agent makes move
 					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
+
+					# after sprites make move
+					# TODO: investigate speed of bullets  and enemies move. might want to make it easier to predict next states by making all the sprites update only 1 frame before
+
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
 					self.create_new_ship(self.makeNewShip, currentTime)
 					self.update_enemy_speed()
 
+					print("test of self.enemies: ", self.enemies)
 					if len(self.enemies) > 0:
 						self.make_enemies_shoot()
 					else:
-						self.gameOver = True
+						self.gameOver = True  # TODO: remove?
+						print("length = zero. setting game over to true")
 
+			# TODO: absolutely  make this its own function -- game over = true just resets the enemie ships and scores -- does not acutally end and print the score
+			# TODO: change from elif to if
 			if self.gameOver:
+				print("game over!")
 				currentTime = time.get_ticks()
 				# Reset enemy starting position
 				self.enemyPositionStart = self.enemyPositionDefault
 				self.create_game_over(currentTime)
 				scoreList.add((i, self.score))
-				if(i >= it):
+				scoreSum = scoreSum + self.score
+				if (i >= it):
 					break
 			display.update()
 			self.clock.tick(60)
 		print(scoreList)
-
-				
+		print("Score average: ", scoreSum / i)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
