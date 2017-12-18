@@ -30,9 +30,9 @@ How To Play
    **Note:** *The .exe file needs to stay in the same directory as the sounds, images, and font folders.*
    
  - If you have the correct version of Python and Pygame installed, you can run the program in the command prompt / terminal.
- ``` c
- 	cd SpaceInvaders
- 	python spaceinvaders.py
+ ``` bash
+cd SpaceInvaders
+python spaceinvaders.py
  ```
  **Note:** If you're using Python 3, replace the command "python" with "python3"
 
@@ -44,4 +44,4 @@ Thanks for checking out my game and I hope you enjoy it! Feel free to contact me
 - v1.0 released 10/31/2014
 - MIT License
 - Created by Lee Robinson at Iowa State Univeristy.
-- leerob@iastate.edu
+- lrobinson2011@gmail.com
