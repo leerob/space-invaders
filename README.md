@@ -36,12 +36,18 @@ python spaceinvaders.py
  ```
  **Note:** If you're using Python 3, replace the command "python" with "python3"
 
+Demo
+----
+[![Space Invaders](http://img.youtube.com/vi/_2yUP3WMDRc/0.jpg)](http://www.youtube.com/watch?v=_2yUP3WMDRc)
+
+Notable Forks
+----
+- [AI research project where four types of agents control the ship and play the game](https://github.com/scott-pickthorn/Space_Invaders)
+- [NEAT program that evolves to beat the game](https://github.com/lairsonm/neat-in-space-invaders)
 
 Contact
 ----
 Thanks for checking out my game and I hope you enjoy it! Feel free to contact me.
 
-- v1.0 released 10/31/2014
-- MIT License
-- Created by Lee Robinson at Iowa State Univeristy.
+- Lee Robinson
 - lrobinson2011@gmail.com
