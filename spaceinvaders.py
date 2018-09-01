@@ -64,47 +64,34 @@ class Enemy(sprite.Sprite):
 		self.image = self.images[self.index]
 		self.rect = self.image.get_rect()
 		self.direction = 1
-		self.rightMoves = 15
+		self.rightMoves = 30
 		self.leftMoves = 30
-		self.moveNumber = 0
+		self.moveNumber = 15
 		self.moveTime = 600
-		self.firstTime = True
-		self.movedY = False;
-		self.columns = [False] * 10
-		self.aliveColumns = [True] * 10
-		self.addRightMoves = False
-		self.addLeftMoves = False
-		self.numOfRightMoves = 0
-		self.numOfLeftMoves = 0
 		self.timer = time.get_ticks()
 
-	def update(self, keys, currentTime, killedRow, killedColumn, killedArray):
-		self.check_column_deletion(killedRow, killedColumn, killedArray)
+	def update(self, keys, currentTime, enemies):
 		if currentTime - self.timer > self.moveTime:
-			self.movedY = False;
-			if self.moveNumber >= self.rightMoves and self.direction == 1:
+			# calc max move for forward side
+			if self.direction == 1:
+				maxMove = self.rightMoves + enemies.rightAddMove
+			else:
+				maxMove = self.leftMoves + enemies.leftAddMove
+
+			if self.moveNumber >= maxMove:
+				# re-calc max moves according to backward
+				if self.direction == 1:
+					self.leftMoves = 30 + enemies.rightAddMove
+				elif self.direction == -1:
+					self.rightMoves = 30 + enemies.leftAddMove
+
 				self.direction *= -1
 				self.moveNumber = 0
 				self.rect.y += 35
-				self.movedY = True
-				if self.addRightMoves:
-					self.rightMoves += self.numOfRightMoves
-				if self.firstTime:
-					self.rightMoves = self.leftMoves;
-					self.firstTime = False;
-				self.addRightMovesAfterDrop = False
-			if self.moveNumber >= self.leftMoves and self.direction == -1:
-				self.direction *= -1
-				self.moveNumber = 0
-				self.rect.y += 35
-				self.movedY = True
-				if self.addLeftMoves:
-					self.leftMoves += self.numOfLeftMoves
-				self.addLeftMovesAfterDrop = False
-			if self.moveNumber < self.rightMoves and self.direction == 1 and not self.movedY:
+			elif self.direction == 1:
 				self.rect.x += 10
 				self.moveNumber += 1
-			if self.moveNumber < self.leftMoves and self.direction == -1 and not self.movedY:
+			elif self.direction == -1:
 				self.rect.x -= 10
 				self.moveNumber += 1
 
@@ -114,34 +101,8 @@ class Enemy(sprite.Sprite):
 			self.image = self.images[self.index]
 
 			self.timer += self.moveTime
+
 		game.screen.blit(self.image, self.rect)
-
-	def check_column_deletion(self, killedRow, killedColumn, killedArray):
-		if killedRow != -1 and killedColumn != -1:
-			killedArray[killedRow][killedColumn] = 1
-			for column in range(10):
-				if all([killedArray[row][column] == 1 for row in range(5)]):
-					self.columns[column] = True
-
-		for i in range(5):
-			if all([self.columns[x] for x in range(i + 1)]) and self.aliveColumns[i]:
-				self.leftMoves += 5
-				self.aliveColumns[i] = False
-				if self.direction == -1:
-					self.rightMoves += 5
-				else:
-					self.addRightMoves = True
-					self.numOfRightMoves += 5
-					
-		for i in range(5):
-			if all([self.columns[x] for x in range(9, 8 - i, -1)]) and self.aliveColumns[9 - i]:
-				self.aliveColumns[9 - i] = False
-				self.rightMoves += 5
-				if self.direction == 1:
-					self.leftMoves += 5
-				else:
-					self.addLeftMoves = True
-					self.numOfLeftMoves += 5
 
 	def load_images(self):
 		images = {0: ["1_2", "1_1"],
@@ -153,6 +114,58 @@ class Enemy(sprite.Sprite):
 		img1, img2 = (IMAGES["enemy{}".format(img_num)] for img_num in images[self.row])
 		self.images.append(transform.scale(img1, (40, 35)))
 		self.images.append(transform.scale(img2, (40, 35)))
+
+
+class EnemiesGroup(sprite.Group):
+	def __init__(self, columns, rows):
+		sprite.Group.__init__(self)
+		self.enemies = [[0] * columns for _ in range(rows)]
+		self.columns = columns
+		self.rows = rows
+		self.leftAddMove = 0
+		self.rightAddMove = 0
+		self._leftAliveColumn = 0
+		self._rightAliveColumn = columns - 1
+		self._leftKilledColumns = 0
+		self._rightKilledColumns = 0
+
+	def add(self, *sprites):
+		super(sprite.Group, self).add(*sprites)
+
+		for s in sprites:
+			self.enemies[s.row][s.column] = s
+
+	def is_column_dead(self, column):
+		for row in range(self.rows):
+			if self.enemies[row][column]:
+				return False
+		return True
+
+	def random_bottom(self):
+		random_index = randrange(len(self))
+		col = self.sprites()[random_index].column
+		for row in range(self.rows, 0, -1):
+			enemy = self.enemies[row-1][col]
+			if enemy:
+				return enemy
+		return None
+
+	def kill(self, enemy):
+		self.enemies[enemy.row][enemy.column] = None
+
+		if enemy.column == self._rightAliveColumn:
+			while self._rightAliveColumn > 0\
+					and self.is_column_dead(self._rightAliveColumn):
+				self._rightAliveColumn -= 1
+				self._rightKilledColumns += 1
+				self.rightAddMove = self._rightKilledColumns * 5
+
+		if enemy.column == self._leftAliveColumn:
+			while self._leftAliveColumn < self.columns\
+					and self.is_column_dead(self._leftAliveColumn):
+				self._leftAliveColumn += 1
+				self._leftKilledColumns += 1
+				self.leftAddMove = self._leftKilledColumns * 5
 
 
 class Blocker(sprite.Sprite):
@@ -317,11 +330,8 @@ class SpaceInvaders(object):
 		self.lives = lives
 		self.create_audio()
 		self.create_text()
-		self.killedRow = -1
-		self.killedColumn = -1
 		self.makeNewShip = False
 		self.shipAlive = True
-		self.killedArray = [[0] * 10 for x in range(5)]
 
 	def make_blockers(self, number):
 		blockerGroup = sprite.Group()
@@ -407,7 +417,7 @@ class SpaceInvaders(object):
 							self.sounds["shoot2"].play()
 
 	def make_enemies(self):
-		enemies = sprite.Group()
+		enemies = EnemiesGroup(10, 5)
 		for row in range(5):
 			for column in range(10):
 				enemy = Enemy(row, column)
@@ -419,27 +429,14 @@ class SpaceInvaders(object):
 		self.allSprites = sprite.Group(self.player, self.enemies, self.livesGroup, self.mysteryShip)
 
 	def make_enemies_shoot(self):
-		columnList = []
-		for enemy in self.enemies:
-			columnList.append(enemy.column)
-
-		columnSet = set(columnList)
-		columnList = list(columnSet)
-		shuffle(columnList)
-		column = columnList[0]
-		enemyList = []
-		rowList = []
-
-		for enemy in self.enemies:
-			if enemy.column == column:
-				rowList.append(enemy.row)
-		row = max(rowList)
-		for enemy in self.enemies:
-			if enemy.column == column and enemy.row == row:
-				if (time.get_ticks() - self.timer) > 700:
-					self.enemyBullets.add(Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5, "enemylaser", "center"))
-					self.allSprites.add(self.enemyBullets)
-					self.timer = time.get_ticks() 
+		if (time.get_ticks() - self.timer) > 700:
+			enemy = self.enemies.random_bottom()
+			if enemy:
+				self.enemyBullets.add(
+					Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
+						   "enemylaser", "center"))
+				self.allSprites.add(self.enemyBullets)
+				self.timer = time.get_ticks()
 
 	def calculate_score(self, row):
 		scores = {0: 30,
@@ -495,9 +492,8 @@ class SpaceInvaders(object):
 		if enemiesdict:
 			for value in enemiesdict.values():
 				for currentSprite in value:
+					self.enemies.kill(currentSprite)
 					self.sounds["invaderkilled"].play()
-					self.killedRow = currentSprite.row
-					self.killedColumn = currentSprite.column
 					score = self.calculate_score(currentSprite.row)
 					explosion = Explosion(currentSprite.rect.x, currentSprite.rect.y, currentSprite.row, False, False, score)
 					self.explosionsGroup.add(explosion)
@@ -612,7 +608,6 @@ class SpaceInvaders(object):
 						# Move enemies closer to bottom
 						self.enemyPositionStart += 35
 						self.reset(self.score, self.lives)
-						self.make_enemies()
 						self.gameTimer += 3000
 				else:
 					currentTime = time.get_ticks()
@@ -624,7 +619,7 @@ class SpaceInvaders(object):
 					self.scoreText2.draw(self.screen)
 					self.livesText.draw(self.screen)
 					self.check_input()
-					self.allSprites.update(self.keys, currentTime, self.killedRow, self.killedColumn, self.killedArray)
+					self.allSprites.update(self.keys, currentTime, self.enemies)
 					self.explosionsGroup.update(self.keys, currentTime)
 					self.check_collisions()
 					self.create_new_ship(self.makeNewShip, currentTime)
