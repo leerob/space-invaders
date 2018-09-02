@@ -1,10 +1,18 @@
+#!/usr/bin/env python
+
 # Space Invaders
 # Created by Lee Robinson
 
-#!/usr/bin/env python
 from pygame import *
 import sys
-from random import shuffle, randrange, choice
+from os.path import abspath, dirname
+from random import randrange, choice
+
+
+BASE_PATH = abspath(dirname(__file__))
+FONT_PATH = BASE_PATH + "/fonts/"
+IMAGE_PATH = BASE_PATH + "/images/"
+SOUND_PATH = BASE_PATH + "/sounds/"
 
 #           R    G    B
 WHITE 	= (255, 255, 255)
@@ -15,11 +23,12 @@ PURPLE 	= (203, 0, 255)
 RED 	= (237, 28, 36)
 
 SCREEN 		= display.set_mode((800,600))
-FONT = "fonts/space_invaders.ttf"
+FONT = FONT_PATH + "space_invaders.ttf"
 IMG_NAMES 	= ["ship", "ship", "mystery", "enemy1_1", "enemy1_2", "enemy2_1", "enemy2_2",
 				"enemy3_1", "enemy3_2", "explosionblue", "explosiongreen", "explosionpurple", "laser", "enemylaser"]
-IMAGES 		= {name: image.load("images/{}.png".format(name)).convert_alpha()
+IMAGES 		= {name: image.load(IMAGE_PATH + "{}.png".format(name)).convert_alpha()
 				for name in IMG_NAMES}
+
 
 class Ship(sprite.Sprite):
 	def __init__(self):
@@ -194,7 +203,7 @@ class Mystery(sprite.Sprite):
 		self.moveTime = 25000
 		self.direction = 1
 		self.timer = time.get_ticks()
-		self.mysteryEntered = mixer.Sound('sounds/mysteryentered.wav')
+		self.mysteryEntered = mixer.Sound(SOUND_PATH + "mysteryentered.wav")
 		self.mysteryEntered.set_volume(0.3)
 		self.playSound = True
 
@@ -296,7 +305,7 @@ class SpaceInvaders(object):
 		init()
 		self.caption = display.set_caption('Space Invaders')
 		self.screen = SCREEN
-		self.background = image.load('images/background.jpg').convert()
+		self.background = image.load(IMAGE_PATH + "background.jpg").convert()
 		self.startGame = False
 		self.mainScreen = True
 		self.gameOver = False
@@ -362,10 +371,10 @@ class SpaceInvaders(object):
 	def create_audio(self):
 		self.sounds = {}
 		for sound_name in ["shoot", "shoot2", "invaderkilled", "mysterykilled", "shipexplosion"]:
-			self.sounds[sound_name] = mixer.Sound("sounds/{}.wav".format(sound_name))
+			self.sounds[sound_name] = mixer.Sound(SOUND_PATH + "{}.wav".format(sound_name))
 			self.sounds[sound_name].set_volume(0.2)
 
-		self.musicNotes = [mixer.Sound("sounds/{}.wav".format(i)) for i in range(4)]
+		self.musicNotes = [mixer.Sound(SOUND_PATH + "{}.wav".format(i)) for i in range(4)]
 		for sound in self.musicNotes:
 			sound.set_volume(0.5)
 
