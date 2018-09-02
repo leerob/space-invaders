@@ -210,27 +210,29 @@ class Mystery(sprite.Sprite):
 
     def update(self, keys, currentTime, *args):
         resetTimer = False
-        if (currentTime - self.timer > self.moveTime) and (
-                self.rect.x < 0 or self.rect.x > 800) and self.playSound:
-            self.mysteryEntered.play()
-            self.playSound = False
-        if (currentTime - self.timer > self.moveTime) and self.rect.x < 840 and self.direction == 1:
-            self.mysteryEntered.fadeout(4000)
-            self.rect.x += 2
-            game.screen.blit(self.image, self.rect)
-        if (currentTime - self.timer > self.moveTime) and self.rect.x > -100 and self.direction == -1:
-            self.mysteryEntered.fadeout(4000)
-            self.rect.x -= 2
-            game.screen.blit(self.image, self.rect)
-        if (self.rect.x > 830):
+        passed = currentTime - self.timer
+        if passed > self.moveTime:
+            if (self.rect.x < 0 or self.rect.x > 800) and self.playSound:
+                self.mysteryEntered.play()
+                self.playSound = False
+            if self.rect.x < 840 and self.direction == 1:
+                self.mysteryEntered.fadeout(4000)
+                self.rect.x += 2
+                game.screen.blit(self.image, self.rect)
+            if self.rect.x > -100 and self.direction == -1:
+                self.mysteryEntered.fadeout(4000)
+                self.rect.x -= 2
+                game.screen.blit(self.image, self.rect)
+
+        if self.rect.x > 830:
             self.playSound = True
             self.direction = -1
             resetTimer = True
-        if (self.rect.x < -90):
+        if self.rect.x < -90:
             self.playSound = True
             self.direction = 1
             resetTimer = True
-        if (currentTime - self.timer > self.moveTime) and resetTimer:
+        if passed > self.moveTime and resetTimer:
             self.timer = currentTime
 
 
@@ -254,26 +256,27 @@ class Explosion(sprite.Sprite):
         self.timer = time.get_ticks()
 
     def update(self, keys, currentTime):
+        passed = currentTime - self.timer
         if self.isMystery:
-            if currentTime - self.timer <= 200:
+            if passed <= 200:
                 self.text.draw(game.screen)
-            if currentTime - self.timer > 400 and currentTime - self.timer <= 600:
+            elif 400 < passed <= 600:
                 self.text.draw(game.screen)
-            if currentTime - self.timer > 600:
+            elif passed > 600:
                 self.kill()
         elif self.isShip:
-            if currentTime - self.timer > 300 and currentTime - self.timer <= 600:
+            if 300 < passed <= 600:
                 game.screen.blit(self.image, self.rect)
-            if currentTime - self.timer > 900:
+            elif passed > 900:
                 self.kill()
         else:
-            if currentTime - self.timer <= 100:
+            if passed <= 100:
                 game.screen.blit(self.image, self.rect)
-            if currentTime - self.timer > 100 and currentTime - self.timer <= 200:
+            elif 100 < passed <= 200:
                 self.image = transform.scale(self.image, (50, 45))
                 game.screen.blit(self.image,
                                  (self.rect.x - 6, self.rect.y - 6))
-            if currentTime - self.timer > 400:
+            elif passed > 400:
                 self.kill()
 
     def load_image(self):
@@ -601,15 +604,16 @@ class SpaceInvaders(object):
 
     def create_game_over(self, currentTime):
         self.screen.blit(self.background, (0, 0))
-        if currentTime - self.timer < 750:
+        passed = currentTime - self.timer
+        if passed < 750:
             self.gameOverText.draw(self.screen)
-        if currentTime - self.timer > 750 and currentTime - self.timer < 1500:
+        elif 750 < passed < 1500:
             self.screen.blit(self.background, (0, 0))
-        if currentTime - self.timer > 1500 and currentTime - self.timer < 2250:
+        elif 1500 < passed < 2250:
             self.gameOverText.draw(self.screen)
-        if currentTime - self.timer > 2250 and currentTime - self.timer < 2750:
+        elif 2250 < passed < 2750:
             self.screen.blit(self.background, (0, 0))
-        if currentTime - self.timer > 3000:
+        elif passed > 3000:
             self.mainScreen = True
 
         for e in event.get():
