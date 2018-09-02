@@ -417,7 +417,7 @@ class SpaceInvaders(object):
     def check_input(self):
         self.keys = key.get_pressed()
         for e in event.get():
-            if e.type == QUIT:
+            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
                 sys.exit()
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
@@ -492,7 +492,7 @@ class SpaceInvaders(object):
         self.screen.blit(self.enemy4, (299, 420))
 
         for e in event.get():
-            if e.type == QUIT:
+            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
                 sys.exit()
             if e.type == KEYUP:
                 self.startGame = True
@@ -613,7 +613,7 @@ class SpaceInvaders(object):
             self.mainScreen = True
 
         for e in event.get():
-            if e.type == QUIT:
+            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
                 sys.exit()
 
     def main(self):
