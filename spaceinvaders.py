@@ -9,9 +9,9 @@ from os.path import abspath, dirname
 from random import randrange, choice
 
 BASE_PATH = abspath(dirname(__file__))
-FONT_PATH = BASE_PATH + "/fonts/"
-IMAGE_PATH = BASE_PATH + "/images/"
-SOUND_PATH = BASE_PATH + "/sounds/"
+FONT_PATH = BASE_PATH + '/fonts/'
+IMAGE_PATH = BASE_PATH + '/images/'
+SOUND_PATH = BASE_PATH + '/sounds/'
 
 #           R    G    B
 WHITE = (255, 255, 255)
@@ -22,21 +22,21 @@ PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
 SCREEN = display.set_mode((800, 600))
-FONT = FONT_PATH + "space_invaders.ttf"
-IMG_NAMES = ["ship", "ship", "mystery",
-             "enemy1_1", "enemy1_2",
-             "enemy2_1", "enemy2_2",
-             "enemy3_1", "enemy3_2",
-             "explosionblue", "explosiongreen", "explosionpurple",
-             "laser", "enemylaser"]
-IMAGES = {name: image.load(IMAGE_PATH + "{}.png".format(name)).convert_alpha()
+FONT = FONT_PATH + 'space_invaders.ttf'
+IMG_NAMES = ['ship', 'ship', 'mystery',
+             'enemy1_1', 'enemy1_2',
+             'enemy2_1', 'enemy2_2',
+             'enemy3_1', 'enemy3_2',
+             'explosionblue', 'explosiongreen', 'explosionpurple',
+             'laser', 'enemylaser']
+IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 
 
 class Ship(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
-        self.image = IMAGES["ship"]
+        self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
 
@@ -114,13 +114,13 @@ class Enemy(sprite.Sprite):
         game.screen.blit(self.image, self.rect)
 
     def load_images(self):
-        images = {0: ["1_2", "1_1"],
-                  1: ["2_2", "2_1"],
-                  2: ["2_2", "2_1"],
-                  3: ["3_1", "3_2"],
-                  4: ["3_1", "3_2"],
+        images = {0: ['1_2', '1_1'],
+                  1: ['2_2', '2_1'],
+                  2: ['2_2', '2_1'],
+                  3: ['3_1', '3_2'],
+                  4: ['3_1', '3_2'],
                   }
-        img1, img2 = (IMAGES["enemy{}".format(img_num)] for img_num in
+        img1, img2 = (IMAGES['enemy{}'.format(img_num)] for img_num in
                       images[self.row])
         self.images.append(transform.scale(img1, (40, 35)))
         self.images.append(transform.scale(img2, (40, 35)))
@@ -197,14 +197,14 @@ class Blocker(sprite.Sprite):
 class Mystery(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
-        self.image = IMAGES["mystery"]
+        self.image = IMAGES['mystery']
         self.image = transform.scale(self.image, (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
         self.row = 5
         self.moveTime = 25000
         self.direction = 1
         self.timer = time.get_ticks()
-        self.mysteryEntered = mixer.Sound(SOUND_PATH + "mysteryentered.wav")
+        self.mysteryEntered = mixer.Sound(SOUND_PATH + 'mysteryentered.wav')
         self.mysteryEntered.set_volume(0.3)
         self.playSound = True
 
@@ -244,7 +244,7 @@ class Explosion(sprite.Sprite):
         if mystery:
             self.text = Text(FONT, 20, str(score), WHITE, xpos + 20, ypos + 6)
         elif ship:
-            self.image = IMAGES["ship"]
+            self.image = IMAGES['ship']
             self.rect = self.image.get_rect(topleft=(xpos, ypos))
         else:
             self.row = row
@@ -280,14 +280,14 @@ class Explosion(sprite.Sprite):
                 self.kill()
 
     def load_image(self):
-        imgColors = ["purple", "blue", "blue", "green", "green"]
-        self.image = IMAGES["explosion{}".format(imgColors[self.row])]
+        imgColors = ['purple', 'blue', 'blue', 'green', 'green']
+        self.image = IMAGES['explosion{}'.format(imgColors[self.row])]
 
 
 class Life(sprite.Sprite):
     def __init__(self, xpos, ypos):
         sprite.Sprite.__init__(self)
-        self.image = IMAGES["ship"]
+        self.image = IMAGES['ship']
         self.image = transform.scale(self.image, (23, 23))
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
 
@@ -311,7 +311,7 @@ class SpaceInvaders(object):
         init()
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
-        self.background = image.load(IMAGE_PATH + "background.jpg").convert()
+        self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
         self.startGame = False
         self.mainScreen = True
         self.gameOver = False
@@ -379,13 +379,13 @@ class SpaceInvaders(object):
 
     def create_audio(self):
         self.sounds = {}
-        for sound_name in ["shoot", "shoot2", "invaderkilled", "mysterykilled",
-                           "shipexplosion"]:
+        for sound_name in ['shoot', 'shoot2', 'invaderkilled', 'mysterykilled',
+                           'shipexplosion']:
             self.sounds[sound_name] = mixer.Sound(
-                SOUND_PATH + "{}.wav".format(sound_name))
+                SOUND_PATH + '{}.wav'.format(sound_name))
             self.sounds[sound_name].set_volume(0.2)
 
-        self.musicNotes = [mixer.Sound(SOUND_PATH + "{}.wav".format(i)) for i
+        self.musicNotes = [mixer.Sound(SOUND_PATH + '{}.wav'.format(i)) for i
                            in range(4)]
         for sound in self.musicNotes:
             sound.set_volume(0.5)
@@ -405,17 +405,17 @@ class SpaceInvaders(object):
             self.noteTimer += moveTime
 
     def create_text(self):
-        self.titleText = Text(FONT, 50, "Space Invaders", WHITE, 164, 155)
-        self.titleText2 = Text(FONT, 25, "Press any key to continue", WHITE,
+        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
+        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
                                201, 225)
-        self.gameOverText = Text(FONT, 50, "Game Over", WHITE, 250, 270)
-        self.nextRoundText = Text(FONT, 50, "Next Round", WHITE, 240, 270)
-        self.enemy1Text = Text(FONT, 25, "   =   10 pts", GREEN, 368, 270)
-        self.enemy2Text = Text(FONT, 25, "   =  20 pts", BLUE, 368, 320)
-        self.enemy3Text = Text(FONT, 25, "   =  30 pts", PURPLE, 368, 370)
-        self.enemy4Text = Text(FONT, 25, "   =  ?????", RED, 368, 420)
-        self.scoreText = Text(FONT, 20, "Score", WHITE, 5, 5)
-        self.livesText = Text(FONT, 20, "Lives ", WHITE, 640, 5)
+        self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
+        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
+        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
+        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
+        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
+        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
+        self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
+        self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
     def check_input(self):
         self.keys = key.get_pressed()
@@ -428,21 +428,21 @@ class SpaceInvaders(object):
                         if self.score < 1000:
                             bullet = Bullet(self.player.rect.x + 23,
                                             self.player.rect.y + 5, -1,
-                                            15, "laser", "center")
+                                            15, 'laser', 'center')
                             self.bullets.add(bullet)
                             self.allSprites.add(self.bullets)
-                            self.sounds["shoot"].play()
+                            self.sounds['shoot'].play()
                         else:
                             leftbullet = Bullet(self.player.rect.x + 8,
                                                 self.player.rect.y + 5, -1,
-                                                15, "laser", "left")
+                                                15, 'laser', 'left')
                             rightbullet = Bullet(self.player.rect.x + 38,
                                                  self.player.rect.y + 5, -1,
-                                                 15, "laser", "right")
+                                                 15, 'laser', 'right')
                             self.bullets.add(leftbullet)
                             self.bullets.add(rightbullet)
                             self.allSprites.add(self.bullets)
-                            self.sounds["shoot2"].play()
+                            self.sounds['shoot2'].play()
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -463,7 +463,7 @@ class SpaceInvaders(object):
             if enemy:
                 self.enemyBullets.add(
                     Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
-                           "enemylaser", "center"))
+                           'enemylaser', 'center'))
                 self.allSprites.add(self.enemyBullets)
                 self.timer = time.get_ticks()
 
@@ -481,13 +481,13 @@ class SpaceInvaders(object):
         return score
 
     def create_main_menu(self):
-        self.enemy1 = IMAGES["enemy3_1"]
+        self.enemy1 = IMAGES['enemy3_1']
         self.enemy1 = transform.scale(self.enemy1, (40, 40))
-        self.enemy2 = IMAGES["enemy2_2"]
+        self.enemy2 = IMAGES['enemy2_2']
         self.enemy2 = transform.scale(self.enemy2, (40, 40))
-        self.enemy3 = IMAGES["enemy1_2"]
+        self.enemy3 = IMAGES['enemy1_2']
         self.enemy3 = transform.scale(self.enemy3, (40, 40))
-        self.enemy4 = IMAGES["mystery"]
+        self.enemy4 = IMAGES['mystery']
         self.enemy4 = transform.scale(self.enemy4, (80, 40))
         self.screen.blit(self.enemy1, (318, 270))
         self.screen.blit(self.enemy2, (318, 320))
@@ -524,7 +524,7 @@ class SpaceInvaders(object):
             for value in enemiesdict.values():
                 for currentSprite in value:
                     self.enemies.kill(currentSprite)
-                    self.sounds["invaderkilled"].play()
+                    self.sounds['invaderkilled'].play()
                     score = self.calculate_score(currentSprite.row)
                     explosion = Explosion(currentSprite.rect.x,
                                           currentSprite.rect.y,
@@ -542,7 +542,7 @@ class SpaceInvaders(object):
             for value in mysterydict.values():
                 for currentSprite in value:
                     currentSprite.mysteryEntered.stop()
-                    self.sounds["mysterykilled"].play()
+                    self.sounds['mysterykilled'].play()
                     score = self.calculate_score(currentSprite.row)
                     explosion = Explosion(currentSprite.rect.x,
                                           currentSprite.rect.y,
@@ -576,7 +576,7 @@ class SpaceInvaders(object):
                     elif self.lives == 0:
                         self.gameOver = True
                         self.startGame = False
-                    self.sounds["shipexplosion"].play()
+                    self.sounds['shipexplosion'].play()
                     explosion = Explosion(playerShip.rect.x, playerShip.rect.y,
                                           0, True, False, 0)
                     self.explosionsGroup.add(explosion)
