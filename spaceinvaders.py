@@ -315,7 +315,9 @@ class Text(object):
 
 class SpaceInvaders(object):
     def __init__(self):
-        mixer.pre_init(44100, -16, 1, 512)
+        # It seems, in Linux buffersize=512 is not enough, use 4096 to prevent:
+        #   ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
+        mixer.pre_init(44100, -16, 1, 4096)
         init()
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
