@@ -13,7 +13,7 @@ FONT_PATH = BASE_PATH + '/fonts/'
 IMAGE_PATH = BASE_PATH + '/images/'
 SOUND_PATH = BASE_PATH + '/sounds/'
 
-#           R    G    B
+# Colors (R, G, B)
 WHITE = (255, 255, 255)
 GREEN = (78, 255, 87)
 YELLOW = (241, 255, 0)
@@ -23,7 +23,7 @@ RED = (237, 28, 36)
 
 SCREEN = display.set_mode((800, 600))
 FONT = FONT_PATH + 'space_invaders.ttf'
-IMG_NAMES = ['ship', 'ship', 'mystery',
+IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
              'enemy2_1', 'enemy2_2',
              'enemy3_1', 'enemy3_2',
