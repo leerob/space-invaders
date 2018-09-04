@@ -417,10 +417,15 @@ class SpaceInvaders(object):
         self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
         self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
+    @staticmethod
+    def should_exit(evt):
+        # type: (pygame.event.EventType) -> bool
+        return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
+
     def check_input(self):
         self.keys = key.get_pressed()
         for e in event.get():
-            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
+            if self.should_exit(e):
                 sys.exit()
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
@@ -495,7 +500,7 @@ class SpaceInvaders(object):
         self.screen.blit(self.enemy4, (299, 420))
 
         for e in event.get():
-            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
+            if self.should_exit(e):
                 sys.exit()
             if e.type == KEYUP:
                 self.startGame = True
@@ -617,7 +622,7 @@ class SpaceInvaders(object):
             self.mainScreen = True
 
         for e in event.get():
-            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
+            if self.should_exit(e):
                 sys.exit()
 
     def main(self):
