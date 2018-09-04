@@ -6,7 +6,7 @@
 from pygame import *
 import sys
 from os.path import abspath, dirname
-from random import randrange, choice
+from random import randint, choice
 
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
@@ -134,6 +134,7 @@ class EnemiesGroup(sprite.Group):
         self.rows = rows
         self.leftAddMove = 0
         self.rightAddMove = 0
+        self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
         self._leftKilledColumns = 0
@@ -152,8 +153,8 @@ class EnemiesGroup(sprite.Group):
         return True
 
     def random_bottom(self):
-        random_index = randrange(len(self))
-        col = self.sprites()[random_index].column
+        random_index = randint(0, len(self._aliveColumns) - 1)
+        col = self._aliveColumns[random_index]
         for row in range(self.rows, 0, -1):
             enemy = self.enemies[row - 1][col]
             if enemy:
@@ -161,21 +162,28 @@ class EnemiesGroup(sprite.Group):
         return None
 
     def kill(self, enemy):
+        # on double hit calls twice for same enemy, so check before
+        if not self.enemies[enemy.row][enemy.column]:
+            return  # nothing to kill
+
         self.enemies[enemy.row][enemy.column] = None
+        isColumnDead = self.is_column_dead(enemy.column)
+        if isColumnDead:
+            self._aliveColumns.remove(enemy.column)
 
         if enemy.column == self._rightAliveColumn:
-            while self._rightAliveColumn > 0 \
-                    and self.is_column_dead(self._rightAliveColumn):
+            while self._rightAliveColumn > 0 and isColumnDead:
                 self._rightAliveColumn -= 1
                 self._rightKilledColumns += 1
                 self.rightAddMove = self._rightKilledColumns * 5
+                isColumnDead = self.is_column_dead(self._rightAliveColumn)
 
-        if enemy.column == self._leftAliveColumn:
-            while self._leftAliveColumn < self.columns \
-                    and self.is_column_dead(self._leftAliveColumn):
+        elif enemy.column == self._leftAliveColumn:
+            while self._leftAliveColumn < self.columns and isColumnDead:
                 self._leftAliveColumn += 1
                 self._leftKilledColumns += 1
                 self.leftAddMove = self._leftKilledColumns * 5
+                isColumnDead = self.is_column_dead(self._leftAliveColumn)
 
 
 class Blocker(sprite.Sprite):
