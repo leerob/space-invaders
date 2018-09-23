@@ -3,10 +3,16 @@
 # Space Invaders
 # Created by Lee Robinson
 
-from pygame import *
 import sys
 from os.path import abspath, dirname
 from random import randint, choice
+
+from pygame import display, event, font, image, init, key,\
+    mixer, time, transform, Surface
+from pygame.constants import QUIT, KEYDOWN, KEYUP,\
+    K_ESCAPE, K_LEFT, K_RIGHT, K_SPACE
+from pygame.sprite import groupcollide, Group, Sprite
+
 
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
@@ -33,13 +39,14 @@ IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 
 
-class Ship(sprite.Sprite):
+class Ship(Sprite):
     def __init__(self):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
 
+    # noinspection PyUnusedLocal
     def update(self, keys, *args):
         if keys[K_LEFT] and self.rect.x > 10:
             self.rect.x -= self.speed
@@ -48,9 +55,9 @@ class Ship(sprite.Sprite):
         game.screen.blit(self.image, self.rect)
 
 
-class Bullet(sprite.Sprite):
+class Bullet(Sprite):
     def __init__(self, xpos, ypos, direction, speed, filename, side):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.image = IMAGES[filename]
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
         self.speed = speed
@@ -58,6 +65,7 @@ class Bullet(sprite.Sprite):
         self.side = side
         self.filename = filename
 
+    # noinspection PyUnusedLocal
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
@@ -65,9 +73,9 @@ class Bullet(sprite.Sprite):
             self.kill()
 
 
-class Enemy(sprite.Sprite):
+class Enemy(Sprite):
     def __init__(self, row, column):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.row = row
         self.column = column
         self.images = []
@@ -82,6 +90,7 @@ class Enemy(sprite.Sprite):
         self.moveTime = 600
         self.timer = time.get_ticks()
 
+    # noinspection PyUnusedLocal
     def update(self, keys, current_time, enemies):
         if current_time - self.timer > self.moveTime:
             if self.direction == 1:
@@ -126,9 +135,9 @@ class Enemy(sprite.Sprite):
         self.images.append(transform.scale(img2, (40, 35)))
 
 
-class EnemiesGroup(sprite.Group):
+class EnemiesGroup(Group):
     def __init__(self, columns, rows):
-        sprite.Group.__init__(self)
+        Group.__init__(self)
         self.enemies = [[0] * columns for _ in range(rows)]
         self.columns = columns
         self.rows = rows
@@ -141,7 +150,7 @@ class EnemiesGroup(sprite.Group):
         self._rightDeadColumns = 0
 
     def add(self, *sprites):
-        super(sprite.Group, self).add(*sprites)
+        super(Group, self).add(*sprites)
 
         for s in sprites:
             self.enemies[s.row][s.column] = s
@@ -186,9 +195,9 @@ class EnemiesGroup(sprite.Group):
                 is_column_dead = self.is_column_dead(self._leftAliveColumn)
 
 
-class Blocker(sprite.Sprite):
+class Blocker(Sprite):
     def __init__(self, size, color_, row, column):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.height = size
         self.width = size
         self.color = color_
@@ -198,13 +207,14 @@ class Blocker(sprite.Sprite):
         self.row = row
         self.column = column
 
+    # noinspection PyUnusedLocal
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
 
 
-class Mystery(sprite.Sprite):
+class Mystery(Sprite):
     def __init__(self):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.image = IMAGES['mystery']
         self.image = transform.scale(self.image, (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
@@ -216,6 +226,7 @@ class Mystery(sprite.Sprite):
         self.mysteryEntered.set_volume(0.3)
         self.playSound = True
 
+    # noinspection PyUnusedLocal
     def update(self, keys, current_time, *args):
         reset_timer = False
         passed = current_time - self.timer
@@ -244,9 +255,9 @@ class Mystery(sprite.Sprite):
             self.timer = current_time
 
 
-class Explosion(sprite.Sprite):
+class Explosion(Sprite):
     def __init__(self, xpos, ypos, row, ship, mystery, score):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.isMystery = mystery
         self.isShip = ship
         if mystery:
@@ -263,6 +274,7 @@ class Explosion(sprite.Sprite):
 
         self.timer = time.get_ticks()
 
+    # noinspection PyUnusedLocal
     def update(self, keys, current_time):
         passed = current_time - self.timer
         if self.isMystery:
@@ -292,9 +304,9 @@ class Explosion(sprite.Sprite):
         self.image = IMAGES['explosion{}'.format(img_colors[self.row])]
 
 
-class Life(sprite.Sprite):
+class Life(Sprite):
     def __init__(self, xpos, ypos):
-        sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.image = IMAGES['ship']
         self.image = transform.scale(self.image, (23, 23))
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
@@ -334,21 +346,21 @@ class SpaceInvaders(object):
 
     def reset(self, score, lives, new_game=False):
         self.player = Ship()
-        self.playerGroup = sprite.Group(self.player)
-        self.explosionsGroup = sprite.Group()
-        self.bullets = sprite.Group()
+        self.playerGroup = Group(self.player)
+        self.explosionsGroup = Group()
+        self.bullets = Group()
         self.mysteryShip = Mystery()
-        self.mysteryGroup = sprite.Group(self.mysteryShip)
-        self.enemyBullets = sprite.Group()
+        self.mysteryGroup = Group(self.mysteryShip)
+        self.enemyBullets = Group()
         self.reset_lives(lives)
         self.enemyPosition = self.enemyPositionStart
         self.make_enemies()
         # Only create blockers on a new game, not a new round
         if new_game:
-            self.allBlockers = sprite.Group(self.make_blockers(0),
-                                            self.make_blockers(1),
-                                            self.make_blockers(2),
-                                            self.make_blockers(3))
+            self.allBlockers = Group(self.make_blockers(0),
+                                     self.make_blockers(1),
+                                     self.make_blockers(2),
+                                     self.make_blockers(3))
         self.keys = key.get_pressed()
         self.clock = time.Clock()
         self.timer = time.get_ticks()
@@ -363,7 +375,7 @@ class SpaceInvaders(object):
 
     @staticmethod
     def make_blockers(number):
-        blocker_group = sprite.Group()
+        blocker_group = Group()
         for row in range(4):
             for column in range(9):
                 blocker = Blocker(10, GREEN, row, column)
@@ -378,11 +390,11 @@ class SpaceInvaders(object):
         self.life3 = Life(769, 3)
 
         if self.lives == 3:
-            self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
+            self.livesGroup = Group(self.life1, self.life2, self.life3)
         elif self.lives == 2:
-            self.livesGroup = sprite.Group(self.life1, self.life2)
+            self.livesGroup = Group(self.life1, self.life2)
         elif self.lives == 1:
-            self.livesGroup = sprite.Group(self.life1)
+            self.livesGroup = Group(self.life1)
 
     def reset_lives(self, lives):
         self.lives = lives
@@ -430,7 +442,7 @@ class SpaceInvaders(object):
 
     @staticmethod
     def should_exit(evt):
-        # type: (pygame.event.EventType) -> bool
+        # type: (event.EventType) -> bool
         return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
 
     def check_input(self):
@@ -470,8 +482,8 @@ class SpaceInvaders(object):
                 enemies.add(enemy)
 
         self.enemies = enemies
-        self.allSprites = sprite.Group(self.player, self.enemies,
-                                       self.livesGroup, self.mysteryShip)
+        self.allSprites = Group(self.player, self.enemies,
+                                self.livesGroup, self.mysteryShip)
 
     def make_enemies_shoot(self):
         if (time.get_ticks() - self.timer) > 700:
@@ -526,16 +538,16 @@ class SpaceInvaders(object):
                 enemy.moveTime = 200
 
     def check_collisions(self):
-        collidedict = sprite.groupcollide(self.bullets, self.enemyBullets,
-                                          True, False)
+        collidedict = groupcollide(self.bullets, self.enemyBullets,
+                                   True, False)
         if collidedict:
             for value in collidedict.values():
                 for currentSprite in value:
                     self.enemyBullets.remove(currentSprite)
                     self.allSprites.remove(currentSprite)
 
-        enemiesdict = sprite.groupcollide(self.bullets, self.enemies,
-                                          True, False)
+        enemiesdict = groupcollide(self.bullets, self.enemies,
+                                   True, False)
         if enemiesdict:
             for value in enemiesdict.values():
                 for currentSprite in value:
@@ -552,8 +564,8 @@ class SpaceInvaders(object):
                     self.gameTimer = time.get_ticks()
                     break
 
-        mysterydict = sprite.groupcollide(self.bullets, self.mysteryGroup,
-                                          True, True)
+        mysterydict = groupcollide(self.bullets, self.mysteryGroup,
+                                   True, True)
         if mysterydict:
             for value in mysterydict.values():
                 for currentSprite in value:
@@ -572,8 +584,8 @@ class SpaceInvaders(object):
                     self.mysteryGroup.add(new_ship)
                     break
 
-        bulletsdict = sprite.groupcollide(self.enemyBullets, self.playerGroup,
-                                          True, False)
+        bulletsdict = groupcollide(self.enemyBullets, self.playerGroup,
+                                   True, False)
         if bulletsdict:
             for value in bulletsdict.values():
                 for playerShip in value:
@@ -602,13 +614,13 @@ class SpaceInvaders(object):
                     self.shipTimer = time.get_ticks()
                     self.shipAlive = False
 
-        if sprite.groupcollide(self.enemies, self.playerGroup, True, True):
+        if groupcollide(self.enemies, self.playerGroup, True, True):
             self.gameOver = True
             self.startGame = False
 
-        sprite.groupcollide(self.bullets, self.allBlockers, True, True)
-        sprite.groupcollide(self.enemyBullets, self.allBlockers, True, True)
-        sprite.groupcollide(self.enemies, self.allBlockers, False, True)
+        groupcollide(self.bullets, self.allBlockers, True, True)
+        groupcollide(self.enemyBullets, self.allBlockers, True, True)
+        groupcollide(self.enemies, self.allBlockers, False, True)
 
     def create_new_ship(self, create_ship, current_time):
         if create_ship and (current_time - self.shipTimer > 900):
