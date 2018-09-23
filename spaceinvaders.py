@@ -138,7 +138,7 @@ class Enemy(Sprite):
 class EnemiesGroup(Group):
     def __init__(self, columns, rows):
         Group.__init__(self)
-        self.enemies = [[0] * columns for _ in range(rows)]
+        self.enemies = [[None] * columns for _ in range(rows)]
         self.columns = columns
         self.rows = rows
         self.leftAddMove = 0
@@ -162,6 +162,7 @@ class EnemiesGroup(Group):
         return True
 
     def random_bottom(self):
+        # type: () -> Optional[Enemy]
         random_index = randint(0, len(self._aliveColumns) - 1)
         col = self._aliveColumns[random_index]
         for row in range(self.rows, 0, -1):
@@ -538,14 +539,10 @@ class SpaceInvaders(object):
                 enemy.moveTime = 200
 
     def check_collisions(self):
-        collidedict = groupcollide(self.bullets, self.enemyBullets,
-                                   True, False)
-        if collidedict:
-            for value in collidedict.values():
-                for currentSprite in value:
-                    self.enemyBullets.remove(currentSprite)
-                    self.allSprites.remove(currentSprite)
+        groupcollide(self.bullets, self.enemyBullets, True, True)
 
+        # Don't kill B, because of on double hit second bullet fly through an
+        # explosion and kills next enemy also. And we need one dead enemy only.
         enemiesdict = groupcollide(self.bullets, self.enemies,
                                    True, False)
         if enemiesdict:
@@ -577,15 +574,13 @@ class SpaceInvaders(object):
                                           currentSprite.row, False, True,
                                           score)
                     self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(currentSprite)
-                    self.mysteryGroup.remove(currentSprite)
                     new_ship = Mystery()
                     self.allSprites.add(new_ship)
                     self.mysteryGroup.add(new_ship)
                     break
 
         bulletsdict = groupcollide(self.enemyBullets, self.playerGroup,
-                                   True, False)
+                                   True, True)
         if bulletsdict:
             for value in bulletsdict.values():
                 for playerShip in value:
@@ -608,8 +603,6 @@ class SpaceInvaders(object):
                     explosion = Explosion(playerShip.rect.x, playerShip.rect.y,
                                           0, True, False, 0)
                     self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(playerShip)
-                    self.playerGroup.remove(playerShip)
                     self.makeNewShip = True
                     self.shipTimer = time.get_ticks()
                     self.shipAlive = False
@@ -702,7 +695,7 @@ class SpaceInvaders(object):
 
             elif self.gameOver:
                 current_time = time.get_ticks()
-                # Reset enemy starting position
+                # Reset enemy start position
                 self.enemyPositionStart = self.enemyPositionDefault
                 self.create_game_over(current_time)
 
