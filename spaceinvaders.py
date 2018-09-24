@@ -40,8 +40,8 @@ IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
 
 
 class Ship(Sprite):
-    def __init__(self):
-        Sprite.__init__(self)
+    def __init__(self, *groups):
+        Sprite.__init__(self, *groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
@@ -214,8 +214,8 @@ class Blocker(Sprite):
 
 
 class Mystery(Sprite):
-    def __init__(self):
-        Sprite.__init__(self)
+    def __init__(self, *groups):
+        Sprite.__init__(self, *groups)
         self.image = IMAGES['mystery']
         self.image = transform.scale(self.image, (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
@@ -239,7 +239,7 @@ class Mystery(Sprite):
                 self.mysteryEntered.fadeout(4000)
                 self.rect.x += 2
                 game.screen.blit(self.image, self.rect)
-            if self.rect.x > -100 and self.direction == -1:
+            elif self.rect.x > -100 and self.direction == -1:
                 self.mysteryEntered.fadeout(4000)
                 self.rect.x -= 2
                 game.screen.blit(self.image, self.rect)
@@ -248,7 +248,7 @@ class Mystery(Sprite):
             self.playSound = True
             self.direction = -1
             reset_timer = True
-        if self.rect.x < -90:
+        elif self.rect.x < -90:
             self.playSound = True
             self.direction = 1
             reset_timer = True
@@ -275,8 +275,7 @@ class Explosion(Sprite):
 
         self.timer = time.get_ticks()
 
-    # noinspection PyUnusedLocal
-    def update(self, keys, current_time):
+    def update(self, current_time):
         passed = current_time - self.timer
         if self.isMystery:
             if passed <= 200:
@@ -312,7 +311,7 @@ class Life(Sprite):
         self.image = transform.scale(self.image, (23, 23))
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
 
-    def update(self, keys, *args):
+    def update(self, *args):
         game.screen.blit(self.image, self.rect)
 
 
@@ -345,24 +344,36 @@ class SpaceInvaders(object):
         # Current enemy starting position
         self.enemyPosition = self.enemyPositionStart
 
-    def reset(self, score, lives, new_game=False):
-        self.player = Ship()
-        self.playerGroup = Group(self.player)
-        self.explosionsGroup = Group()
+        self.enemy1 = transform.scale(IMAGES['enemy3_1'], (40, 40))
+        self.enemy2 = transform.scale(IMAGES['enemy2_2'], (40, 40))
+        self.enemy3 = transform.scale(IMAGES['enemy1_2'], (40, 40))
+        self.enemy4 = transform.scale(IMAGES['mystery'], (80, 40))
+
         self.bullets = Group()
-        self.mysteryShip = Mystery()
-        self.mysteryGroup = Group(self.mysteryShip)
         self.enemyBullets = Group()
+        self.explosionsGroup = Group()
+        self.playerGroup = Group()
+        self.mysteryGroup = Group()
+        self.allBlockers = Group()
+
+    def reset(self, score, lives, new_game=False):
+        self.playerGroup.empty()
+        self.player = Ship(self.playerGroup)
+        self.explosionsGroup.empty()
+        self.bullets.empty()
+        self.mysteryGroup.empty()
+        self.mysteryShip = Mystery(self.mysteryGroup)
+        self.enemyBullets.empty()
         self.reset_lives(lives)
         self.enemyPosition = self.enemyPositionStart
         self.make_enemies()
         # Only create blockers on a new game, not a new round
         if new_game:
-            self.allBlockers = Group(self.make_blockers(0),
-                                     self.make_blockers(1),
-                                     self.make_blockers(2),
-                                     self.make_blockers(3))
-        self.keys = key.get_pressed()
+            self.allBlockers.empty()
+            self.allBlockers.add(self.make_blockers(0),
+                                 self.make_blockers(200),
+                                 self.make_blockers(400),
+                                 self.make_blockers(600))
         self.clock = time.Clock()
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
@@ -375,12 +386,12 @@ class SpaceInvaders(object):
         self.shipAlive = True
 
     @staticmethod
-    def make_blockers(number):
+    def make_blockers(offset):
         blocker_group = Group()
         for row in range(4):
             for column in range(9):
                 blocker = Blocker(10, GREEN, row, column)
-                blocker.rect.x = 50 + (200 * number) + (column * blocker.width)
+                blocker.rect.x = 50 + offset + (column * blocker.width)
                 blocker.rect.y = 450 + (row * blocker.height)
                 blocker_group.add(blocker)
         return blocker_group
@@ -447,7 +458,6 @@ class SpaceInvaders(object):
         return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
 
     def check_input(self):
-        self.keys = key.get_pressed()
         for e in event.get():
             if self.should_exit(e):
                 sys.exit()
@@ -510,14 +520,6 @@ class SpaceInvaders(object):
         return score
 
     def create_main_menu(self):
-        self.enemy1 = IMAGES['enemy3_1']
-        self.enemy1 = transform.scale(self.enemy1, (40, 40))
-        self.enemy2 = IMAGES['enemy2_2']
-        self.enemy2 = transform.scale(self.enemy2, (40, 40))
-        self.enemy3 = IMAGES['enemy1_2']
-        self.enemy3 = transform.scale(self.enemy3, (40, 40))
-        self.enemy4 = IMAGES['mystery']
-        self.enemy4 = transform.scale(self.enemy4, (80, 40))
         self.screen.blit(self.enemy1, (318, 270))
         self.screen.blit(self.enemy2, (318, 320))
         self.screen.blit(self.enemy3, (318, 370))
@@ -665,8 +667,7 @@ class SpaceInvaders(object):
                         self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
                         self.livesText.draw(self.screen)
-                        self.livesGroup.update(self.keys)
-                        self.check_input()
+                        self.livesGroup.update()
                     if current_time - self.gameTimer > 3000:
                         # Move enemies closer to bottom
                         self.enemyPositionStart += 35
@@ -683,9 +684,9 @@ class SpaceInvaders(object):
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
                     self.check_input()
-                    self.allSprites.update(self.keys, current_time,
-                                           self.enemies)
-                    self.explosionsGroup.update(self.keys, current_time)
+                    keys = key.get_pressed()
+                    self.allSprites.update(keys, current_time, self.enemies)
+                    self.explosionsGroup.update(current_time)
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, current_time)
                     self.update_enemy_speed()
