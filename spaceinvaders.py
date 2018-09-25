@@ -301,11 +301,11 @@ class ShipExplosion(Sprite):
 
 
 class Life(Sprite):
-    def __init__(self, xpos, ypos):
-        Sprite.__init__(self)
+    def __init__(self, x, y, *groups):
+        Sprite.__init__(self, *groups)
         self.image = IMAGES['ship']
         self.image = transform.scale(self.image, (23, 23))
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
+        self.rect = self.image.get_rect(topleft=(x, y))
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
@@ -351,6 +351,10 @@ class SpaceInvaders(object):
         self.playerGroup = Group()
         self.mysteryGroup = Group()
         self.allBlockers = Group()
+        self.livesGroup = Group()
+        self.life1 = Life(715, 3, self.livesGroup)
+        self.life2 = Life(742, 3, self.livesGroup)
+        self.life3 = Life(769, 3, self.livesGroup)
 
     def reset(self, score, lives, new_game=False):
         self.playerGroup.empty()
@@ -375,7 +379,6 @@ class SpaceInvaders(object):
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
         self.score = score
-        self.lives = lives
         self.create_audio()
         self.create_text()
         self.makeNewShip = False
@@ -391,21 +394,14 @@ class SpaceInvaders(object):
                 Blocker(x, y, 10, GREEN, blocker_group)
         return blocker_group
 
-    def reset_lives_sprites(self):
-        self.life1 = Life(715, 3)
-        self.life2 = Life(742, 3)
-        self.life3 = Life(769, 3)
-
-        if self.lives == 3:
-            self.livesGroup = Group(self.life1, self.life2, self.life3)
-        elif self.lives == 2:
-            self.livesGroup = Group(self.life1, self.life2)
-        elif self.lives == 1:
-            self.livesGroup = Group(self.life1)
-
     def reset_lives(self, lives):
-        self.lives = lives
-        self.reset_lives_sprites()
+        self.livesGroup.empty()
+        if lives == 3:
+            self.livesGroup.add(self.life1, self.life2, self.life3)
+        elif lives == 2:
+            self.livesGroup.add(self.life1, self.life2)
+        elif lives == 1:
+            self.livesGroup.add(self.life1)
 
     def create_audio(self):
         self.sounds = {}
@@ -566,19 +562,13 @@ class SpaceInvaders(object):
         if bulletsdict:
             for value in bulletsdict.values():
                 for playerShip in value:
-                    if self.lives == 3:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life3)
-                        self.allSprites.remove(self.life3)
-                    elif self.lives == 2:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life2)
-                        self.allSprites.remove(self.life2)
-                    elif self.lives == 1:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life1)
-                        self.allSprites.remove(self.life1)
-                    elif self.lives == 0:
+                    if self.livesGroup.has(self.life3):
+                        self.life3.kill()
+                    elif self.livesGroup.has(self.life2):
+                        self.life2.kill()
+                    elif self.livesGroup.has(self.life1):
+                        self.life1.kill()
+                    else:
                         self.gameOver = True
                         self.startGame = False
                     self.sounds['shipexplosion'].play()
@@ -650,7 +640,7 @@ class SpaceInvaders(object):
                     if current_time - self.gameTimer > 3000:
                         # Move enemies closer to bottom
                         self.enemyPositionStart += 35
-                        self.reset(self.score, self.lives)
+                        self.reset(self.score, len(self.livesGroup))
                         self.gameTimer += 3000
                 else:
                     current_time = time.get_ticks()
