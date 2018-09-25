@@ -195,9 +195,7 @@ class EnemiesGroup(Group):
 class Blocker(Sprite):
     def __init__(self, x, y, size, color_, *groups):
         Sprite.__init__(self, *groups)
-        self.height = size
-        self.width = size
-        self.image = Surface((self.width, self.height))
+        self.image = Surface((size, size))
         self.image.fill(color_)
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -248,52 +246,58 @@ class Mystery(Sprite):
             self.timer = current_time
 
 
-class Explosion(Sprite):
-    def __init__(self, xpos, ypos, row, ship, mystery, score):
-        Sprite.__init__(self)
-        self.isMystery = mystery
-        self.isShip = ship
-        if mystery:
-            self.text = Text(FONT, 20, str(score), WHITE, xpos + 20, ypos + 6)
-        elif ship:
-            self.image = IMAGES['ship']
-            self.rect = self.image.get_rect(topleft=(xpos, ypos))
-        else:
-            self.row = row
-            self.load_image()
-            self.image = transform.scale(self.image, (40, 35))
-            self.rect = self.image.get_rect(topleft=(xpos, ypos))
-            game.screen.blit(self.image, self.rect)
+class EnemyExplosion(Sprite):
+    def __init__(self, x, y, row, *groups):
+        Sprite.__init__(self, *groups)
+        self.image = transform.scale(self.get_image(row), (40, 35))
+        self.image2 = transform.scale(self.image, (50, 45))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.timer = time.get_ticks()
 
+    @staticmethod
+    def get_image(row):
+        img_colors = ['purple', 'blue', 'blue', 'green', 'green']
+        return IMAGES['explosion{}'.format(img_colors[row])]
+
+    def update(self, current_time):
+        passed = current_time - self.timer
+        if passed <= 100:
+            game.screen.blit(self.image, self.rect)
+        elif 100 < passed <= 200:
+            game.screen.blit(self.image2, (self.rect.x - 6, self.rect.y - 6))
+        elif passed > 400:
+            self.kill()
+
+
+class MysteryExplosion(Sprite):
+    def __init__(self, x, y, score, *groups):
+        Sprite.__init__(self, *groups)
+        self.text = Text(FONT, 20, str(score), WHITE, x + 20, y + 6)
         self.timer = time.get_ticks()
 
     def update(self, current_time):
         passed = current_time - self.timer
-        if self.isMystery:
-            if passed <= 200:
-                self.text.draw(game.screen)
-            elif 400 < passed <= 600:
-                self.text.draw(game.screen)
-            elif passed > 600:
-                self.kill()
-        elif self.isShip:
-            if 300 < passed <= 600:
-                game.screen.blit(self.image, self.rect)
-            elif passed > 900:
-                self.kill()
-        else:
-            if passed <= 100:
-                game.screen.blit(self.image, self.rect)
-            elif 100 < passed <= 200:
-                self.image = transform.scale(self.image, (50, 45))
-                game.screen.blit(self.image,
-                                 (self.rect.x - 6, self.rect.y - 6))
-            elif passed > 400:
-                self.kill()
+        if passed <= 200:
+            self.text.draw(game.screen)
+        elif 400 < passed <= 600:
+            self.text.draw(game.screen)
+        elif passed > 600:
+            self.kill()
 
-    def load_image(self):
-        img_colors = ['purple', 'blue', 'blue', 'green', 'green']
-        self.image = IMAGES['explosion{}'.format(img_colors[self.row])]
+
+class ShipExplosion(Sprite):
+    def __init__(self, x, y, *groups):
+        Sprite.__init__(self, *groups)
+        self.image = IMAGES['ship']
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.timer = time.get_ticks()
+
+    def update(self, current_time):
+        passed = current_time - self.timer
+        if 300 < passed <= 600:
+            game.screen.blit(self.image, self.rect)
+        elif passed > 900:
+            self.kill()
 
 
 class Life(Sprite):
@@ -457,14 +461,14 @@ class SpaceInvaders(object):
                     if len(self.bullets) == 0 and self.shipAlive:
                         y = self.player.rect.y + 5
                         if self.score < 1000:
-                            Bullet(self.player.rect.x + 23, y, -15,
-                                   'laser', self.bullets, self.allSprites)
+                            Bullet(self.player.rect.x + 23, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
                             self.sounds['shoot'].play()
                         else:
-                            Bullet(self.player.rect.x + 8, y, -15,
-                                   'laser', self.bullets, self.allSprites)
-                            Bullet(self.player.rect.x + 38, y, -15,
-                                   'laser', self.bullets, self.allSprites)
+                            Bullet(self.player.rect.x + 8, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
+                            Bullet(self.player.rect.x + 38, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
                             self.sounds['shoot2'].play()
 
     def make_enemies(self):
@@ -484,8 +488,8 @@ class SpaceInvaders(object):
         if (time.get_ticks() - self.timer) > 700:
             enemy = self.enemies.random_bottom()
             if enemy:
-                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5,
-                       'enemylaser', self.enemyBullets, self.allSprites)
+                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
+                       self.enemyBullets, self.allSprites)
                 self.timer = time.get_ticks()
 
     def calculate_score(self, row):
@@ -531,17 +535,14 @@ class SpaceInvaders(object):
                                    True, False)
         if enemiesdict:
             for value in enemiesdict.values():
-                for currentSprite in value:
-                    self.enemies.kill(currentSprite)
+                for enemy in value:
+                    self.enemies.kill(enemy)
                     self.sounds['invaderkilled'].play()
-                    score = self.calculate_score(currentSprite.row)
-                    explosion = Explosion(currentSprite.rect.x,
-                                          currentSprite.rect.y,
-                                          currentSprite.row, False, False,
-                                          score)
-                    self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(currentSprite)
-                    self.enemies.remove(currentSprite)
+                    self.calculate_score(enemy.row)
+                    EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
+                                   self.explosionsGroup)
+                    self.allSprites.remove(enemy)
+                    self.enemies.remove(enemy)
                     self.gameTimer = time.get_ticks()
                     break
 
@@ -549,15 +550,12 @@ class SpaceInvaders(object):
                                    True, True)
         if mysterydict:
             for value in mysterydict.values():
-                for currentSprite in value:
-                    currentSprite.mysteryEntered.stop()
+                for mystery in value:
+                    mystery.mysteryEntered.stop()
                     self.sounds['mysterykilled'].play()
-                    score = self.calculate_score(currentSprite.row)
-                    explosion = Explosion(currentSprite.rect.x,
-                                          currentSprite.rect.y,
-                                          currentSprite.row, False, True,
-                                          score)
-                    self.explosionsGroup.add(explosion)
+                    score = self.calculate_score(mystery.row)
+                    MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
+                                     self.explosionsGroup)
                     new_ship = Mystery()
                     self.allSprites.add(new_ship)
                     self.mysteryGroup.add(new_ship)
@@ -584,9 +582,8 @@ class SpaceInvaders(object):
                         self.gameOver = True
                         self.startGame = False
                     self.sounds['shipexplosion'].play()
-                    explosion = Explosion(playerShip.rect.x, playerShip.rect.y,
-                                          0, True, False, 0)
-                    self.explosionsGroup.add(explosion)
+                    ShipExplosion(playerShip.rect.x, playerShip.rect.y,
+                                  self.explosionsGroup)
                     self.makeNewShip = True
                     self.shipTimer = time.get_ticks()
                     self.shipAlive = False
