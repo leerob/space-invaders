@@ -56,19 +56,15 @@ class Ship(Sprite):
 
 
 class Bullet(Sprite):
-    def __init__(self, xpos, ypos, direction, speed, filename, side):
-        Sprite.__init__(self)
+    def __init__(self, x, y, velocity, filename, *groups):
+        Sprite.__init__(self, *groups)
         self.image = IMAGES[filename]
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
-        self.speed = speed
-        self.direction = direction
-        self.side = side
-        self.filename = filename
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.velocity = velocity
 
-    # noinspection PyUnusedLocal
-    def update(self, keys, *args):
+    def update(self, *args):
         game.screen.blit(self.image, self.rect)
-        self.rect.y += self.speed * self.direction
+        self.rect.y += self.velocity
         if self.rect.y < 15 or self.rect.y > 600:
             self.kill()
 
@@ -197,19 +193,15 @@ class EnemiesGroup(Group):
 
 
 class Blocker(Sprite):
-    def __init__(self, size, color_, row, column):
-        Sprite.__init__(self)
+    def __init__(self, x, y, size, color_, *groups):
+        Sprite.__init__(self, *groups)
         self.height = size
         self.width = size
-        self.color = color_
         self.image = Surface((self.width, self.height))
-        self.image.fill(self.color)
-        self.rect = self.image.get_rect()
-        self.row = row
-        self.column = column
+        self.image.fill(color_)
+        self.rect = self.image.get_rect(topleft=(x, y))
 
-    # noinspection PyUnusedLocal
-    def update(self, keys, *args):
+    def update(self, *args):
         game.screen.blit(self.image, self.rect)
 
 
@@ -390,10 +382,9 @@ class SpaceInvaders(object):
         blocker_group = Group()
         for row in range(4):
             for column in range(9):
-                blocker = Blocker(10, GREEN, row, column)
-                blocker.rect.x = 50 + offset + (column * blocker.width)
-                blocker.rect.y = 450 + (row * blocker.height)
-                blocker_group.add(blocker)
+                x = 50 + offset + (column * 10)
+                y = 450 + (row * 10)
+                Blocker(x, y, 10, GREEN, blocker_group)
         return blocker_group
 
     def reset_lives_sprites(self):
@@ -464,23 +455,16 @@ class SpaceInvaders(object):
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
                     if len(self.bullets) == 0 and self.shipAlive:
+                        y = self.player.rect.y + 5
                         if self.score < 1000:
-                            bullet = Bullet(self.player.rect.x + 23,
-                                            self.player.rect.y + 5, -1,
-                                            15, 'laser', 'center')
-                            self.bullets.add(bullet)
-                            self.allSprites.add(self.bullets)
+                            Bullet(self.player.rect.x + 23, y, -15,
+                                   'laser', self.bullets, self.allSprites)
                             self.sounds['shoot'].play()
                         else:
-                            leftbullet = Bullet(self.player.rect.x + 8,
-                                                self.player.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            rightbullet = Bullet(self.player.rect.x + 38,
-                                                 self.player.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
-                            self.bullets.add(leftbullet)
-                            self.bullets.add(rightbullet)
-                            self.allSprites.add(self.bullets)
+                            Bullet(self.player.rect.x + 8, y, -15,
+                                   'laser', self.bullets, self.allSprites)
+                            Bullet(self.player.rect.x + 38, y, -15,
+                                   'laser', self.bullets, self.allSprites)
                             self.sounds['shoot2'].play()
 
     def make_enemies(self):
@@ -500,10 +484,8 @@ class SpaceInvaders(object):
         if (time.get_ticks() - self.timer) > 700:
             enemy = self.enemies.random_bottom()
             if enemy:
-                self.enemyBullets.add(
-                    Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
-                           'enemylaser', 'center'))
-                self.allSprites.add(self.enemyBullets)
+                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5,
+                       'enemylaser', self.enemyBullets, self.allSprites)
                 self.timer = time.get_ticks()
 
     def calculate_score(self, row):
