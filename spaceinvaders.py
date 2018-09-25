@@ -595,16 +595,11 @@ class SpaceInvaders(object):
             self.shipAlive = True
 
     def create_game_over(self, current_time):
-        self.screen.blit(self.background, (0, 0))
         passed = current_time - self.timer
         if passed < 750:
             self.gameOverText.draw(self.screen)
-        elif 750 < passed < 1500:
-            self.screen.blit(self.background, (0, 0))
         elif 1500 < passed < 2250:
             self.gameOverText.draw(self.screen)
-        elif 2250 < passed < 2750:
-            self.screen.blit(self.background, (0, 0))
         elif passed > 3000:
             self.mainScreen = True
 
@@ -614,9 +609,9 @@ class SpaceInvaders(object):
 
     def main(self):
         while True:
+            self.screen.blit(self.background, (0, 0))
             if self.mainScreen:
                 self.reset(0, 3, True)
-                self.screen.blit(self.background, (0, 0))
                 self.titleText.draw(self.screen)
                 self.titleText2.draw(self.screen)
                 self.enemy1Text.draw(self.screen)
@@ -629,7 +624,6 @@ class SpaceInvaders(object):
                 if len(self.enemies) == 0:
                     current_time = time.get_ticks()
                     if current_time - self.gameTimer < 3000:
-                        self.screen.blit(self.background, (0, 0))
                         self.scoreText2 = Text(FONT, 20, str(self.score),
                                                GREEN, 85, 5)
                         self.scoreText.draw(self.screen)
@@ -645,7 +639,6 @@ class SpaceInvaders(object):
                 else:
                     current_time = time.get_ticks()
                     self.play_main_music(current_time)
-                    self.screen.blit(self.background, (0, 0))
                     self.allBlockers.update(self.screen)
                     self.scoreText2 = Text(FONT, 20, str(self.score), GREEN,
                                            85, 5)
