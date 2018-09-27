@@ -46,7 +46,6 @@ class Ship(Sprite):
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
 
-    # noinspection PyUnusedLocal
     def update(self, keys, *args):
         if keys[K_LEFT] and self.rect.x > 10:
             self.rect.x -= self.speed
@@ -344,6 +343,17 @@ class SpaceInvaders(object):
         self.enemy2 = transform.scale(IMAGES['enemy2_2'], (40, 40))
         self.enemy3 = transform.scale(IMAGES['enemy1_2'], (40, 40))
         self.enemy4 = transform.scale(IMAGES['mystery'], (80, 40))
+        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
+        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
+                               201, 225)
+        self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
+        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
+        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
+        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
+        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
+        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
+        self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
+        self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
         self.bullets = Group()
         self.enemyBullets = Group()
@@ -380,7 +390,6 @@ class SpaceInvaders(object):
         self.shipTimer = time.get_ticks()
         self.score = score
         self.create_audio()
-        self.create_text()
         self.makeNewShip = False
         self.shipAlive = True
 
@@ -429,19 +438,6 @@ class SpaceInvaders(object):
 
             self.note.play()
             self.noteTimer += move_time
-
-    def create_text(self):
-        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
-        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
-                               201, 225)
-        self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
-        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
-        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
-        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
-        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
-        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
-        self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
-        self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
     @staticmethod
     def should_exit(evt):
@@ -500,19 +496,6 @@ class SpaceInvaders(object):
         score = scores[row]
         self.score += score
         return score
-
-    def create_main_menu(self):
-        self.screen.blit(self.enemy1, (318, 270))
-        self.screen.blit(self.enemy2, (318, 320))
-        self.screen.blit(self.enemy3, (318, 370))
-        self.screen.blit(self.enemy4, (299, 420))
-
-        for e in event.get():
-            if self.should_exit(e):
-                sys.exit()
-            if e.type == KEYUP:
-                self.startGame = True
-                self.mainScreen = False
 
     def update_enemy_speed(self):
         if len(self.enemies) <= 10:
@@ -618,7 +601,17 @@ class SpaceInvaders(object):
                 self.enemy2Text.draw(self.screen)
                 self.enemy3Text.draw(self.screen)
                 self.enemy4Text.draw(self.screen)
-                self.create_main_menu()
+                self.screen.blit(self.enemy1, (318, 270))
+                self.screen.blit(self.enemy2, (318, 320))
+                self.screen.blit(self.enemy3, (318, 370))
+                self.screen.blit(self.enemy4, (299, 420))
+
+                for e in event.get():
+                    if self.should_exit(e):
+                        sys.exit()
+                    if e.type == KEYUP:
+                        self.startGame = True
+                        self.mainScreen = False
 
             elif self.startGame:
                 if len(self.enemies) == 0:
