@@ -11,6 +11,7 @@ from pygame import display, event, font, image, init, key,\
     mixer, time, transform, Surface
 from pygame.constants import QUIT, KEYDOWN, KEYUP,\
     K_ESCAPE, K_LEFT, K_RIGHT, K_SPACE
+from pygame.mixer import Sound
 from pygame.sprite import groupcollide, Group, Sprite
 
 
@@ -326,6 +327,10 @@ class SpaceInvaders(object):
         #   ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
         mixer.pre_init(44100, -16, 1, 4096)
         init()
+        self.sounds = self.init_sounds()
+        self.musicNotes = self.init_music_notes()
+        self.noteIndex = 0
+
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
         self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
@@ -389,9 +394,9 @@ class SpaceInvaders(object):
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
         self.score = score
-        self.create_audio()
         self.makeNewShip = False
         self.shipAlive = True
+        self.noteIndex = 0
 
     @staticmethod
     def make_blockers(offset):
@@ -412,26 +417,29 @@ class SpaceInvaders(object):
         elif lives == 1:
             self.livesGroup.add(self.life1)
 
-    def create_audio(self):
-        self.sounds = {}
-        for sound_name in ['shoot', 'shoot2', 'invaderkilled', 'mysterykilled',
-                           'shipexplosion']:
-            self.sounds[sound_name] = mixer.Sound(
-                SOUND_PATH + '{}.wav'.format(sound_name))
-            self.sounds[sound_name].set_volume(0.2)
+    @staticmethod
+    def init_sounds():
+        # type: () -> Dict[str, Sound]
+        sounds = {}
+        for name in ['shoot', 'shoot2', 'invaderkilled', 'mysterykilled',
+                     'shipexplosion']:
+            sounds[name] = Sound(SOUND_PATH + '{}.wav'.format(name))
+            sounds[name].set_volume(0.2)
+        return sounds
 
-        self.musicNotes = [mixer.Sound(SOUND_PATH + '{}.wav'.format(i)) for i
-                           in range(4)]
-        for sound in self.musicNotes:
-            sound.set_volume(0.5)
-
-        self.noteIndex = 0
+    @staticmethod
+    def init_music_notes():
+        # type: () -> List[Sound]
+        notes = [Sound(SOUND_PATH + '{}.wav'.format(i)) for i in range(4)]
+        for note in notes:
+            note.set_volume(0.5)
+        return notes
 
     def play_main_music(self, current_time):
         move_time = self.enemies.sprites()[0].moveTime
         if current_time - self.noteTimer > move_time:
             self.note = self.musicNotes[self.noteIndex]
-            if self.noteIndex < 3:
+            if self.noteIndex < len(self.musicNotes) - 1:
                 self.noteIndex += 1
             else:
                 self.noteIndex = 0
