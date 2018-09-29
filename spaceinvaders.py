@@ -371,6 +371,8 @@ class SpaceInvaders(object):
         self.life2 = Life(742, 3, self.livesGroup)
         self.life3 = Life(769, 3, self.livesGroup)
 
+        self.clock = time.Clock()
+
     def reset(self, score, lives, new_game=False):
         self.playerGroup.empty()
         self.player = Ship(self.playerGroup)
@@ -389,7 +391,6 @@ class SpaceInvaders(object):
                                  self.make_blockers(200),
                                  self.make_blockers(400),
                                  self.make_blockers(600))
-        self.clock = time.Clock()
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
@@ -602,7 +603,6 @@ class SpaceInvaders(object):
         while True:
             self.screen.blit(self.background, (0, 0))
             if self.mainScreen:
-                self.reset(0, 3, True)
                 self.titleText.draw(self.screen)
                 self.titleText2.draw(self.screen)
                 self.enemy1Text.draw(self.screen)
@@ -618,6 +618,7 @@ class SpaceInvaders(object):
                     if self.should_exit(e):
                         sys.exit()
                     if e.type == KEYUP:
+                        self.reset(0, 3, True)
                         self.startGame = True
                         self.mainScreen = False
 
