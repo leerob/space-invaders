@@ -83,12 +83,11 @@ class Enemy(Sprite):
         self.rightMoves = 30
         self.leftMoves = 30
         self.moveNumber = 15
-        self.moveTime = 600
         self.timer = time.get_ticks()
 
     # noinspection PyUnusedLocal
     def update(self, keys, current_time, enemies):
-        if current_time - self.timer > self.moveTime:
+        if current_time - self.timer > enemies.moveTime:
             if self.direction == 1:
                 max_move = self.rightMoves + enemies.rightAddMove
             else:
@@ -114,7 +113,7 @@ class Enemy(Sprite):
                 self.index = 0
             self.image = self.images[self.index]
 
-            self.timer += self.moveTime
+            self.timer += enemies.moveTime
 
         game.screen.blit(self.image, self.rect)
 
@@ -139,6 +138,7 @@ class EnemiesGroup(Group):
         self.rows = rows
         self.leftAddMove = 0
         self.rightAddMove = 0
+        self.moveTime = 600
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
@@ -154,6 +154,7 @@ class EnemiesGroup(Group):
         super(Group, self).remove_internal(*sprites)
         for s in sprites:
             self._kill(s)
+        self._update_speed()
 
     def is_column_dead(self, column):
         for row in range(self.rows):
@@ -172,6 +173,12 @@ class EnemiesGroup(Group):
                 if enemy:
                     return enemy
         return None
+
+    def _update_speed(self):
+        if len(self) == 1:
+            self.moveTime = 200
+        elif len(self) <= 10:
+            self.moveTime = 400
 
     def _kill(self, enemy):
         # On double hit calls twice for same enemy, so check before
@@ -447,15 +454,14 @@ class SpaceInvaders(object):
         return notes
 
     def play_main_music(self, current_time):
-        move_time = self.enemies.sprites()[0].moveTime
-        if current_time - self.noteTimer > move_time:
+        if current_time - self.noteTimer > self.enemies.moveTime:
             note = self.musicNotes[self.noteIndex]
             self.noteIndex += 1
             if self.noteIndex >= len(self.musicNotes):
                 self.noteIndex = 0
 
             note.play()
-            self.noteTimer += move_time
+            self.noteTimer += self.enemies.moveTime
 
     @staticmethod
     def should_exit(evt):
@@ -514,14 +520,6 @@ class SpaceInvaders(object):
         self.score += score
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         return score
-
-    def update_enemy_speed(self):
-        if len(self.enemies) <= 10:
-            for enemy in self.enemies:
-                enemy.moveTime = 400
-        if len(self.enemies) == 1:
-            for enemy in self.enemies:
-                enemy.moveTime = 200
 
     def check_collisions(self):
         groupcollide(self.bullets, self.enemyBullets, True, True)
@@ -627,7 +625,7 @@ class SpaceInvaders(object):
                         self.mainScreen = False
 
             elif self.startGame:
-                if len(self.enemies) == 0:
+                if len(self.enemies) == 0 and len(self.explosionsGroup) == 0:
                     current_time = time.get_ticks()
                     if current_time - self.gameTimer < 3000:
                         self.scoreText.draw(self.screen)
@@ -653,7 +651,6 @@ class SpaceInvaders(object):
                     self.explosionsGroup.update(current_time)
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, current_time)
-                    self.update_enemy_speed()
                     self.make_enemies_shoot()
 
             elif self.gameOver:
