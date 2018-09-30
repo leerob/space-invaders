@@ -163,12 +163,14 @@ class EnemiesGroup(Group):
 
     def random_bottom(self):
         # type: () -> Optional[Enemy]
-        random_index = randint(0, len(self._aliveColumns) - 1)
-        col = self._aliveColumns[random_index]
-        for row in range(self.rows, 0, -1):
-            enemy = self.enemies[row - 1][col]
-            if enemy:
-                return enemy
+        count = len(self._aliveColumns)
+        if count > 0:
+            random_index = randint(0, count - 1)
+            col = self._aliveColumns[random_index]
+            for row in range(self.rows, 0, -1):
+                enemy = self.enemies[row - 1][col]
+                if enemy:
+                    return enemy
         return None
 
     def _kill(self, enemy):
