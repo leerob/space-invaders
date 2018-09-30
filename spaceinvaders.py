@@ -265,7 +265,7 @@ class EnemyExplosion(Sprite):
             game.screen.blit(self.image, self.rect)
         elif 100 < passed <= 200:
             game.screen.blit(self.image2, (self.rect.x - 6, self.rect.y - 6))
-        elif passed > 400:
+        elif 400 < passed:
             self.kill()
 
 
@@ -281,7 +281,7 @@ class MysteryExplosion(Sprite):
             self.text.draw(game.screen)
         elif 400 < passed <= 600:
             self.text.draw(game.screen)
-        elif passed > 600:
+        elif 600 < passed:
             self.kill()
 
 
@@ -296,7 +296,7 @@ class ShipExplosion(Sprite):
         passed = current_time - self.timer
         if 300 < passed <= 600:
             game.screen.blit(self.image, self.rect)
-        elif passed > 900:
+        elif 900 < passed:
             self.kill()
 
 
@@ -337,6 +337,7 @@ class SpaceInvaders(object):
         self.startGame = False
         self.mainScreen = True
         self.gameOver = False
+        self.score = 0
         # Initial value for a new game
         self.enemyPositionDefault = 65
         # Counter for enemy starting position (increased each new round)
@@ -357,7 +358,9 @@ class SpaceInvaders(object):
         self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
         self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
         self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
+
         self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
+        self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
         self.bullets = Group()
@@ -395,6 +398,7 @@ class SpaceInvaders(object):
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
         self.score = score
+        self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         self.makeNewShip = False
         self.shipAlive = True
         self.noteIndex = 0
@@ -439,13 +443,12 @@ class SpaceInvaders(object):
     def play_main_music(self, current_time):
         move_time = self.enemies.sprites()[0].moveTime
         if current_time - self.noteTimer > move_time:
-            self.note = self.musicNotes[self.noteIndex]
-            if self.noteIndex < len(self.musicNotes) - 1:
-                self.noteIndex += 1
-            else:
+            note = self.musicNotes[self.noteIndex]
+            self.noteIndex += 1
+            if self.noteIndex >= len(self.musicNotes):
                 self.noteIndex = 0
 
-            self.note.play()
+            note.play()
             self.noteTimer += move_time
 
     @staticmethod
@@ -504,6 +507,7 @@ class SpaceInvaders(object):
 
         score = scores[row]
         self.score += score
+        self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         return score
 
     def update_enemy_speed(self):
@@ -544,9 +548,7 @@ class SpaceInvaders(object):
                     score = self.calculate_score(mystery.row)
                     MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
                                      self.explosionsGroup)
-                    new_ship = Mystery()
-                    self.allSprites.add(new_ship)
-                    self.mysteryGroup.add(new_ship)
+                    Mystery(self.allSprites, self.mysteryGroup)
                     break
 
         bulletsdict = groupcollide(self.enemyBullets, self.playerGroup,
@@ -580,9 +582,7 @@ class SpaceInvaders(object):
 
     def create_new_ship(self, create_ship, current_time):
         if create_ship and (current_time - self.shipTimer > 900):
-            self.player = Ship()
-            self.allSprites.add(self.player)
-            self.playerGroup.add(self.player)
+            self.player = Ship(self.allSprites, self.playerGroup)
             self.makeNewShip = False
             self.shipAlive = True
 
@@ -592,7 +592,7 @@ class SpaceInvaders(object):
             self.gameOverText.draw(self.screen)
         elif 1500 < passed < 2250:
             self.gameOverText.draw(self.screen)
-        elif passed > 3000:
+        elif 3000 < passed:
             self.mainScreen = True
 
         for e in event.get():
@@ -626,8 +626,6 @@ class SpaceInvaders(object):
                 if len(self.enemies) == 0:
                     current_time = time.get_ticks()
                     if current_time - self.gameTimer < 3000:
-                        self.scoreText2 = Text(FONT, 20, str(self.score),
-                                               GREEN, 85, 5)
                         self.scoreText.draw(self.screen)
                         self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
@@ -642,8 +640,6 @@ class SpaceInvaders(object):
                     current_time = time.get_ticks()
                     self.play_main_music(current_time)
                     self.allBlockers.update(self.screen)
-                    self.scoreText2 = Text(FONT, 20, str(self.score), GREEN,
-                                           85, 5)
                     self.scoreText.draw(self.screen)
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
@@ -654,9 +650,7 @@ class SpaceInvaders(object):
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, current_time)
                     self.update_enemy_speed()
-
-                    if len(self.enemies) > 0:
-                        self.make_enemies_shoot()
+                    self.make_enemies_shoot()
 
             elif self.gameOver:
                 current_time = time.get_ticks()
