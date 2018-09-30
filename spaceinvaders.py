@@ -70,7 +70,7 @@ class Bullet(Sprite):
 
 
 class Enemy(Sprite):
-    def __init__(self, row, column, *groups):
+    def __init__(self, x, y, row, column, *groups):
         self.row = row
         self.column = column
         Sprite.__init__(self, *groups)
@@ -78,7 +78,7 @@ class Enemy(Sprite):
         self.load_images()
         self.index = 0
         self.image = self.images[self.index]
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(topleft=(x, y))
         self.direction = 1
         self.rightMoves = 30
         self.leftMoves = 30
@@ -376,6 +376,7 @@ class SpaceInvaders(object):
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
 
+        self.allSprites = Group()
         self.bullets = Group()
         self.enemyBullets = Group()
         self.explosionsGroup = Group()
@@ -390,12 +391,13 @@ class SpaceInvaders(object):
         self.clock = time.Clock()
 
     def reset(self, score, lives, new_game=False):
+        self.allSprites.empty()
         self.playerGroup.empty()
-        self.player = Ship(self.playerGroup)
+        self.player = Ship(self.allSprites, self.playerGroup)
         self.explosionsGroup.empty()
         self.bullets.empty()
         self.mysteryGroup.empty()
-        self.mysteryShip = Mystery(self.mysteryGroup)
+        Mystery(self.allSprites, self.mysteryGroup)
         self.enemyBullets.empty()
         self.reset_lives(lives)
         self.enemyPosition = self.enemyPositionStart
@@ -491,13 +493,11 @@ class SpaceInvaders(object):
         enemies = EnemiesGroup(10, 5)
         for row in range(5):
             for column in range(10):
-                enemy = Enemy(row, column, enemies)
-                enemy.rect.x = 157 + (column * 50)
-                enemy.rect.y = self.enemyPosition + (row * 45)
+                x = 157 + (column * 50)
+                y = self.enemyPosition + (row * 45)
+                Enemy(x, y, row, column, enemies, self.allSprites)
 
         self.enemies = enemies
-        self.allSprites = Group(self.player, self.enemies,
-                                self.livesGroup, self.mysteryShip)
 
     def make_enemies_shoot(self):
         if (time.get_ticks() - self.timer) > 700:
@@ -641,10 +641,11 @@ class SpaceInvaders(object):
                 else:
                     current_time = time.get_ticks()
                     self.play_main_music(current_time)
-                    self.allBlockers.update(self.screen)
+                    self.allBlockers.update()
                     self.scoreText.draw(self.screen)
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
+                    self.livesGroup.update()
                     self.check_input()
                     keys = key.get_pressed()
                     self.allSprites.update(keys, current_time, self.enemies)
