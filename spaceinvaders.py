@@ -70,10 +70,10 @@ class Bullet(Sprite):
 
 
 class Enemy(Sprite):
-    def __init__(self, row, column):
-        Sprite.__init__(self)
+    def __init__(self, row, column, *groups):
         self.row = row
         self.column = column
+        Sprite.__init__(self, *groups)
         self.images = []
         self.load_images()
         self.index = 0
@@ -145,11 +145,15 @@ class EnemiesGroup(Group):
         self._leftDeadColumns = 0
         self._rightDeadColumns = 0
 
-    def add(self, *sprites):
-        super(Group, self).add(*sprites)
-
+    def add_internal(self, *sprites):
+        super(Group, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
+
+    def remove_internal(self, *sprites):
+        super(Group, self).remove_internal(*sprites)
+        for s in sprites:
+            self._kill(s)
 
     def is_column_dead(self, column):
         for row in range(self.rows):
@@ -167,7 +171,7 @@ class EnemiesGroup(Group):
                 return enemy
         return None
 
-    def kill(self, enemy):
+    def _kill(self, enemy):
         # On double hit calls twice for same enemy, so check before
         if not self.enemies[enemy.row][enemy.column]:
             return  # Already dead
@@ -479,10 +483,9 @@ class SpaceInvaders(object):
         enemies = EnemiesGroup(10, 5)
         for row in range(5):
             for column in range(10):
-                enemy = Enemy(row, column)
+                enemy = Enemy(row, column, enemies)
                 enemy.rect.x = 157 + (column * 50)
                 enemy.rect.y = self.enemyPosition + (row * 45)
-                enemies.add(enemy)
 
         self.enemies = enemies
         self.allSprites = Group(self.player, self.enemies,
@@ -528,13 +531,11 @@ class SpaceInvaders(object):
         if enemiesdict:
             for value in enemiesdict.values():
                 for enemy in value:
-                    self.enemies.kill(enemy)
+                    enemy.kill()
                     self.sounds['invaderkilled'].play()
                     self.calculate_score(enemy.row)
                     EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
                                    self.explosionsGroup)
-                    self.allSprites.remove(enemy)
-                    self.enemies.remove(enemy)
                     self.gameTimer = time.get_ticks()
                     break
 
