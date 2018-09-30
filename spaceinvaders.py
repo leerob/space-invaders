@@ -531,26 +531,27 @@ class SpaceInvaders(object):
         if enemiesdict:
             for value in enemiesdict.values():
                 for enemy in value:
-                    enemy.kill()
-                    self.sounds['invaderkilled'].play()
-                    self.calculate_score(enemy.row)
-                    EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
-                                   self.explosionsGroup)
-                    self.gameTimer = time.get_ticks()
-                    break
+                    if enemy.alive():
+                        enemy.kill()
+                        self.sounds['invaderkilled'].play()
+                        self.calculate_score(enemy.row)
+                        EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
+                                       self.explosionsGroup)
+                        self.gameTimer = time.get_ticks()
 
         mysterydict = groupcollide(self.bullets, self.mysteryGroup,
-                                   True, True)
+                                   True, False)
         if mysterydict:
             for value in mysterydict.values():
                 for mystery in value:
-                    mystery.mysteryEntered.stop()
-                    self.sounds['mysterykilled'].play()
-                    score = self.calculate_score(mystery.row)
-                    MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
-                                     self.explosionsGroup)
-                    Mystery(self.allSprites, self.mysteryGroup)
-                    break
+                    if mystery.alive():
+                        mystery.kill()
+                        mystery.mysteryEntered.stop()
+                        self.sounds['mysterykilled'].play()
+                        score = self.calculate_score(mystery.row)
+                        MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
+                                         self.explosionsGroup)
+                        Mystery(self.allSprites, self.mysteryGroup)
 
         bulletsdict = groupcollide(self.enemyBullets, self.playerGroup,
                                    True, True)
