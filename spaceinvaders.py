@@ -511,55 +511,43 @@ class SpaceInvaders(object):
     def check_collisions(self):
         groupcollide(self.bullets, self.enemyBullets, True, True)
 
-        # Don't kill B, because of on double hit second bullet fly through an
-        # explosion and kills next enemy also. And we need one dead enemy only.
-        enemiesdict = groupcollide(self.bullets, self.enemies,
-                                   True, False)
-        if enemiesdict:
-            for value in enemiesdict.values():
-                for enemy in value:
-                    if enemy.alive():
-                        enemy.kill()
-                        self.sounds['invaderkilled'].play()
-                        self.calculate_score(enemy.row)
-                        EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
-                                       self.explosionsGroup)
-                        self.gameTimer = time.get_ticks()
+        enemies = groupcollide(self.enemies, self.bullets,
+                               True, True).keys()
+        for enemy in enemies:
+            self.sounds['invaderkilled'].play()
+            self.calculate_score(enemy.row)
+            EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
+                           self.explosionsGroup)
+            self.gameTimer = time.get_ticks()
 
-        mysterydict = groupcollide(self.bullets, self.mysteryGroup,
-                                   True, False)
-        if mysterydict:
-            for value in mysterydict.values():
-                for mystery in value:
-                    if mystery.alive():
-                        mystery.kill()
-                        mystery.mysteryEntered.stop()
-                        self.sounds['mysterykilled'].play()
-                        score = self.calculate_score(mystery.row)
-                        MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
-                                         self.explosionsGroup)
-                        Mystery(self.allSprites, self.mysteryGroup)
+        mysteries = groupcollide(self.mysteryGroup, self.bullets,
+                                 True, True).keys()
+        for mystery in mysteries:
+            mystery.mysteryEntered.stop()
+            self.sounds['mysterykilled'].play()
+            score = self.calculate_score(mystery.row)
+            MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
+                             self.explosionsGroup)
+            Mystery(self.allSprites, self.mysteryGroup)
 
-        bulletsdict = groupcollide(self.enemyBullets, self.playerGroup,
-                                   True, True)
-        if bulletsdict:
-            for value in bulletsdict.values():
-                for playerShip in value:
-                    if self.livesGroup.has(self.life3):
-                        self.life3.kill()
-                    elif self.livesGroup.has(self.life2):
-                        self.life2.kill()
-                    elif self.livesGroup.has(self.life1):
-                        self.life1.kill()
-                    else:
-                        self.gameOver = True
-                        self.startGame = False
-                    self.sounds['shipexplosion'].play()
-                    ShipExplosion(playerShip.rect.x, playerShip.rect.y,
-                                  self.explosionsGroup)
-                    self.makeNewShip = True
-                    self.shipTimer = time.get_ticks()
-                    self.shipAlive = False
+        players = groupcollide(self.playerGroup, self.enemyBullets,
+                               True, True).keys()
+        for playerShip in players:
+            if self.livesGroup.has(self.life3):
+                self.life3.kill()
+            elif self.livesGroup.has(self.life2):
+                self.life2.kill()
+            elif self.livesGroup.has(self.life1):
+                self.life1.kill()
+            else:
+                self.gameOver = True
+                self.startGame = False
+            self.sounds['shipexplosion'].play()
+            ShipExplosion(playerShip.rect.x, playerShip.rect.y,
+                          self.explosionsGroup)
+            self.makeNewShip = True
+            self.shipTimer = time.get_ticks()
+            self.shipAlive = False
 
         if groupcollide(self.enemies, self.playerGroup, True, True):
             self.gameOver = True
