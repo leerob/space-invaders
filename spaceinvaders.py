@@ -464,7 +464,7 @@ class SpaceInvaders(object):
                 sys.exit()
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
-                    if len(self.bullets) == 0 and self.player.alive():
+                    if not self.bullets and self.player.alive():
                         y = self.player.rect.y + 5
                         if self.score < 1000:
                             Bullet(self.player.rect.x + 23, y, -15, 'laser',
@@ -557,22 +557,10 @@ class SpaceInvaders(object):
         groupcollide(self.enemyBullets, self.allBlockers, True, True)
         groupcollide(self.enemies, self.allBlockers, False, True)
 
-    def create_game_over(self, current_time):
-        passed = current_time - self.timer
-        if passed < 750:
-            self.gameOverText.draw(self.screen)
-        elif 1500 < passed < 2250:
-            self.gameOverText.draw(self.screen)
-        elif 3000 < passed:
-            self.mainScreen = True
-
-        for e in event.get():
-            if self.should_exit(e):
-                sys.exit()
-
     def main(self):
         while True:
             self.screen.blit(self.background, (0, 0))
+            current_time = time.get_ticks()
             if self.mainScreen:
                 self.titleText.draw(self.screen)
                 self.titleText2.draw(self.screen)
@@ -594,21 +582,20 @@ class SpaceInvaders(object):
                         self.mainScreen = False
 
             elif self.startGame:
-                if len(self.enemies) == 0 and len(self.explosionsGroup) == 0:
-                    current_time = time.get_ticks()
-                    if current_time - self.gameTimer < 3000:
+                if not self.enemies and not self.explosionsGroup:
+                    passed = current_time - self.gameTimer
+                    if passed <= 3000:
                         self.scoreText.draw(self.screen)
                         self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
                         self.livesText.draw(self.screen)
                         self.livesGroup.update()
-                    if current_time - self.gameTimer > 3000:
+                    elif 3000 < passed:
                         # Move enemies closer to bottom
                         self.enemyPositionStart += 35
                         self.reset(self.score, len(self.livesGroup))
                         self.gameTimer += 3000
                 else:
-                    current_time = time.get_ticks()
                     self.play_main_music(current_time)
                     self.allBlockers.update()
                     self.scoreText.draw(self.screen)
@@ -623,10 +610,19 @@ class SpaceInvaders(object):
                     self.make_enemies_shoot()
 
             elif self.gameOver:
-                current_time = time.get_ticks()
                 # Reset enemy start position
                 self.enemyPositionStart = self.enemyPositionDefault
-                self.create_game_over(current_time)
+                passed = current_time - self.timer
+                if passed < 750:
+                    self.gameOverText.draw(self.screen)
+                elif 1500 < passed < 2250:
+                    self.gameOverText.draw(self.screen)
+                elif 3000 < passed:
+                    self.mainScreen = True
+
+                for e in event.get():
+                    if self.should_exit(e):
+                        sys.exit()
 
             display.update()
             self.clock.tick(60)
