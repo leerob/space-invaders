@@ -73,6 +73,12 @@ class Bullet(Sprite):
 
 
 class Enemy(Sprite):
+    row_scores = {0: 30,
+                  1: 20,
+                  2: 20,
+                  3: 10,
+                  4: 10}
+
     def __init__(self, x, y, row, column, *groups):
         self.row = row
         self.column = column
@@ -87,6 +93,7 @@ class Enemy(Sprite):
         self.leftMoves = 30
         self.moveNumber = 15
         self.timer = time.get_ticks()
+        self.score = self.row_scores[self.row]
 
     # noinspection PyUnusedLocal
     def update(self, keys, current_time, enemies):
@@ -224,13 +231,13 @@ class Mystery(Sprite):
         Sprite.__init__(self, *groups)
         self.image = transform.scale(IMAGES['mystery'], (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
-        self.row = 5
         self.moveTime = 25000
         self.velocity = 2
         self.timer = time.get_ticks()
         self.mysteryEntered = Sound(SOUND_PATH + 'mysteryentered.wav')
         self.mysteryEntered.set_volume(0.3)
         self.playSound = True
+        self.score = choice([50, 100, 150, 300])
 
     # noinspection PyUnusedLocal
     def update(self, keys, current_time, *args):
@@ -497,19 +504,9 @@ class SpaceInvaders(object):
                        self.enemyBullets, self.allSprites)
                 self.timer = time.get_ticks()
 
-    def calculate_score(self, row):
-        scores = {0: 30,
-                  1: 20,
-                  2: 20,
-                  3: 10,
-                  4: 10,
-                  5: choice([50, 100, 150, 300])
-                  }
-
-        score = scores[row]
+    def inc_score(self, score):
         self.score += score
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
-        return score
 
     def check_collisions(self):
         groupcollide(self.bullets, self.enemyBullets, True, True)
@@ -518,7 +515,7 @@ class SpaceInvaders(object):
                                True, True).keys()
         for enemy in enemies:
             self.sounds['invaderkilled'].play()
-            self.calculate_score(enemy.row)
+            self.inc_score(enemy.score)
             EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
                            self.explosionsGroup)
             self.gameTimer = time.get_ticks()
@@ -528,8 +525,8 @@ class SpaceInvaders(object):
         for mystery in mysteries:
             mystery.mysteryEntered.stop()
             self.sounds['mysterykilled'].play()
-            score = self.calculate_score(mystery.row)
-            MysteryExplosion(mystery.rect.x, mystery.rect.y, score,
+            self.inc_score(mystery.score)
+            MysteryExplosion(mystery.rect.x, mystery.rect.y, mystery.score,
                              self.explosionsGroup)
             Mystery(self.allSprites, self.mysteryGroup)
 
