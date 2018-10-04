@@ -9,8 +9,9 @@ from random import randint, choice
 
 from pygame import display, event, font, image, init, key,\
     mixer, time, transform, Surface
-from pygame.constants import QUIT, KEYDOWN, KEYUP,\
+from pygame.constants import QUIT, KEYDOWN, KEYUP, USEREVENT,\
     K_ESCAPE, K_LEFT, K_RIGHT, K_SPACE
+from pygame.event import Event
 from pygame.mixer import Sound
 from pygame.sprite import groupcollide, Group, Sprite
 
@@ -38,6 +39,8 @@ IMG_NAMES = ['ship', 'mystery',
              'laser', 'enemylaser']
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
+
+EVENT_SHIP_CREATE = USEREVENT + 0
 
 
 class Ship(Sprite):
@@ -298,6 +301,7 @@ class ShipExplosion(Sprite):
             game.screen.blit(self.image, self.rect)
         elif 900 < passed:
             self.kill()
+            event.post(Event(EVENT_SHIP_CREATE))
 
 
 class Life(Sprite):
@@ -398,11 +402,8 @@ class SpaceInvaders(object):
                                  self.make_blockers(600))
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
-        self.shipTimer = time.get_ticks()
         self.score = score
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
-        self.makeNewShip = False
-        self.shipAlive = True
         self.noteIndex = 0
 
     @staticmethod
@@ -463,7 +464,7 @@ class SpaceInvaders(object):
                 sys.exit()
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
-                    if len(self.bullets) == 0 and self.shipAlive:
+                    if len(self.bullets) == 0 and self.player.alive():
                         y = self.player.rect.y + 5
                         if self.score < 1000:
                             Bullet(self.player.rect.x + 23, y, -15, 'laser',
@@ -475,6 +476,8 @@ class SpaceInvaders(object):
                             Bullet(self.player.rect.x + 38, y, -15, 'laser',
                                    self.bullets, self.allSprites)
                             self.sounds['shoot2'].play()
+            if e.type == EVENT_SHIP_CREATE:
+                self.player = Ship(self.allSprites, self.playerGroup)
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -545,9 +548,6 @@ class SpaceInvaders(object):
             self.sounds['shipexplosion'].play()
             ShipExplosion(playerShip.rect.x, playerShip.rect.y,
                           self.explosionsGroup)
-            self.makeNewShip = True
-            self.shipTimer = time.get_ticks()
-            self.shipAlive = False
 
         if groupcollide(self.enemies, self.playerGroup, True, True):
             self.gameOver = True
@@ -556,12 +556,6 @@ class SpaceInvaders(object):
         groupcollide(self.bullets, self.allBlockers, True, True)
         groupcollide(self.enemyBullets, self.allBlockers, True, True)
         groupcollide(self.enemies, self.allBlockers, False, True)
-
-    def create_new_ship(self, create_ship, current_time):
-        if create_ship and (current_time - self.shipTimer > 900):
-            self.player = Ship(self.allSprites, self.playerGroup)
-            self.makeNewShip = False
-            self.shipAlive = True
 
     def create_game_over(self, current_time):
         passed = current_time - self.timer
@@ -626,7 +620,6 @@ class SpaceInvaders(object):
                     self.allSprites.update(keys, current_time, self.enemies)
                     self.explosionsGroup.update(current_time)
                     self.check_collisions()
-                    self.create_new_ship(self.makeNewShip, current_time)
                     self.make_enemies_shoot()
 
             elif self.gameOver:
