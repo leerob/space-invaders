@@ -126,6 +126,7 @@ class EnemiesGroup(Group):
         self.leftMoves = 30
         self.moveNumber = 15
         self.timer = time.get_ticks()
+        self.bottom = 0
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
@@ -146,6 +147,7 @@ class EnemiesGroup(Group):
                     self.rightMoves = 30 + self.leftAddMove
                 self.direction *= -1
                 self.moveNumber = 0
+                self.bottom += 35
                 for enemy in self:
                     enemy.rect.y += 35
                     enemy.toggle_image()
@@ -496,7 +498,7 @@ class SpaceInvaders(object):
                 x = 157 + (column * 50)
                 y = self.enemyPosition + (row * 45)
                 Enemy(x, y, row, column, enemies, self.allSprites)
-
+        enemies.bottom = self.enemyPosition + (4 * 45) + 35
         self.enemies = enemies
 
     def make_enemies_shoot(self):
@@ -549,13 +551,17 @@ class SpaceInvaders(object):
             ShipExplosion(playerShip.rect.x, playerShip.rect.y,
                           self.explosionsGroup)
 
-        if groupcollide(self.enemies, self.playerGroup, True, True):
-            self.gameOver = True
-            self.startGame = False
+        if self.enemies.bottom >= 540:
+            if groupcollide(self.enemies, self.playerGroup, True, True):
+                self.gameOver = True
+                self.startGame = False
 
         groupcollide(self.bullets, self.allBlockers, True, True)
         groupcollide(self.enemyBullets, self.allBlockers, True, True)
-        groupcollide(self.enemies, self.allBlockers, False, True)
+        # It's too hard to calc 50 en * 144 bl = 7200 collisions with 60 FPS.
+        # Calc if really needed.
+        if self.enemies.bottom >= 450:
+            groupcollide(self.enemies, self.allBlockers, False, True)
 
     def main(self):
         while True:
