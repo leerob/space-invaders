@@ -391,16 +391,12 @@ class SpaceInvaders(object):
 
         self.clock = time.Clock()
 
-    def reset(self, score, lives, new_game=False):
-        self.allSprites.empty()
-        self.playerGroup.empty()
+    def reset(self, score, new_game=False):
+        [gr.empty() for gr in [self.allSprites, self.playerGroup, self.bullets,
+                               self.explosionsGroup, self.mysteryGroup,
+                               self.enemyBullets]]
         self.player = Ship(self.allSprites, self.playerGroup)
-        self.explosionsGroup.empty()
-        self.bullets.empty()
-        self.mysteryGroup.empty()
         Mystery(self.allSprites, self.mysteryGroup)
-        self.enemyBullets.empty()
-        self.reset_lives(lives)
         self.make_enemies()
         # Only create blockers on a new game, not a new round
         if new_game:
@@ -424,15 +420,6 @@ class SpaceInvaders(object):
                 y = 450 + (row * 10)
                 Blocker(x, y, 10, GREEN, blocker_group)
         return blocker_group
-
-    def reset_lives(self, lives):
-        self.livesGroup.empty()
-        if lives == 3:
-            self.livesGroup.add(self.life1, self.life2, self.life3)
-        elif lives == 2:
-            self.livesGroup.add(self.life1, self.life2)
-        elif lives == 1:
-            self.livesGroup.add(self.life1)
 
     @staticmethod
     def init_sounds():
@@ -581,7 +568,8 @@ class SpaceInvaders(object):
                     if self.should_exit(e):
                         sys.exit()
                     if e.type == KEYUP:
-                        self.reset(0, 3, True)
+                        self.livesGroup.add(self.life1, self.life2, self.life3)
+                        self.reset(0, True)
                         self.startGame = True
                         self.mainScreen = False
 
@@ -597,7 +585,7 @@ class SpaceInvaders(object):
                     elif 3000 < passed:
                         # Move enemies closer to bottom
                         self.enemyPosition += ENEMY_MOVE_DOWN
-                        self.reset(self.score, len(self.livesGroup))
+                        self.reset(self.score)
                         self.gameTimer += 3000
                 else:
                     self.play_main_music(current_time)
