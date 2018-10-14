@@ -80,13 +80,22 @@ class Enemy(Sprite):
                   2: 20,
                   3: 10,
                   4: 10}
+    row_images = {0: [transform.scale(IMAGES['enemy1_2'], (40, 35)),
+                      transform.scale(IMAGES['enemy1_1'], (40, 35))],
+                  1: [transform.scale(IMAGES['enemy2_2'], (40, 35)),
+                      transform.scale(IMAGES['enemy2_1'], (40, 35))],
+                  2: [transform.scale(IMAGES['enemy2_2'], (40, 35)),
+                      transform.scale(IMAGES['enemy2_1'], (40, 35))],
+                  3: [transform.scale(IMAGES['enemy3_1'], (40, 35)),
+                      transform.scale(IMAGES['enemy3_2'], (40, 35))],
+                  4: [transform.scale(IMAGES['enemy3_1'], (40, 35)),
+                      transform.scale(IMAGES['enemy3_2'], (40, 35))]}
 
     def __init__(self, x, y, row, column, *groups):
         self.row = row
         self.column = column
         Sprite.__init__(self, *groups)
-        self.images = []
-        self.load_images()
+        self.images = self.row_images[self.row]
         self.index = 0
         self.image = self.images[self.index]
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -100,18 +109,6 @@ class Enemy(Sprite):
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
-
-    def load_images(self):
-        images = {0: ['1_2', '1_1'],
-                  1: ['2_2', '2_1'],
-                  2: ['2_2', '2_1'],
-                  3: ['3_1', '3_2'],
-                  4: ['3_1', '3_2'],
-                  }
-        img1, img2 = (IMAGES['enemy{}'.format(img_num)] for img_num in
-                      images[self.row])
-        self.images.append(transform.scale(img1, (40, 35)))
-        self.images.append(transform.scale(img2, (40, 35)))
 
 
 class EnemiesGroup(Group):
