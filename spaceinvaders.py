@@ -284,10 +284,8 @@ class MysteryExplosion(Sprite):
 
     def update(self, current_time):
         passed = current_time - self.timer
-        if passed <= 200:
-            self.text.draw(game.screen)
-        elif 400 < passed <= 600:
-            self.text.draw(game.screen)
+        if passed <= 200 or 400 < passed <= 600:
+            self.text.update()
         elif 600 < passed:
             self.kill()
 
@@ -308,25 +306,25 @@ class ShipExplosion(Sprite):
             event.post(Event(EVENT_SHIP_CREATE))
 
 
-class Life(Sprite):
-    def __init__(self, x, y, *groups):
+class Img(Sprite):
+    def __init__(self, x, y, filename, w, h, *groups):
         Sprite.__init__(self, *groups)
-        self.image = IMAGES['ship']
-        self.image = transform.scale(self.image, (23, 23))
+        self.image = transform.scale(IMAGES[filename], (w, h))
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
 
 
-class Text(object):
-    def __init__(self, text_font, size, message, color_, xpos, ypos):
-        self.font = font.Font(text_font, size)
+class Text(Sprite):
+    def __init__(self, font_, size, message, color_, x, y, *groups):
+        Sprite.__init__(self, *groups)
+        self.font = font.Font(font_, size)
         self.surface = self.font.render(message, True, color_)
-        self.rect = self.surface.get_rect(topleft=(xpos, ypos))
+        self.rect = self.surface.get_rect(topleft=(x, y))
 
-    def draw(self, surface):
-        surface.blit(self.surface, self.rect)
+    def update(self, *args):
+        game.screen.blit(self.surface, self.rect)
 
 
 class SpaceInvaders(object):
@@ -349,19 +347,20 @@ class SpaceInvaders(object):
         # Counter for enemy starting position (increased each new round)
         self.enemyPosition = ENEMY_DEFAULT_POSITION
 
-        self.enemy1 = transform.scale(IMAGES['enemy3_1'], (40, 40))
-        self.enemy2 = transform.scale(IMAGES['enemy2_2'], (40, 40))
-        self.enemy3 = transform.scale(IMAGES['enemy1_2'], (40, 40))
-        self.enemy4 = transform.scale(IMAGES['mystery'], (80, 40))
-        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
-        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
-                               201, 225)
+        self.mainScreenGroup = Group(
+            Text(FONT, 50, 'Space Invaders', WHITE, 164, 155),
+            Text(FONT, 25, 'Press any key to continue', WHITE, 201, 225),
+            Img(318, 270, 'enemy3_1', 40, 40),
+            Text(FONT, 25, '   =   10 pts', GREEN, 368, 270),
+            Img(318, 320, 'enemy2_2', 40, 40),
+            Text(FONT, 25, '   =  20 pts', BLUE, 368, 320),
+            Img(318, 370, 'enemy1_2', 40, 40),
+            Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370),
+            Img(299, 420, 'mystery', 80, 40),
+            Text(FONT, 25, '   =  ?????', RED, 368, 420),
+        )
         self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
         self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
-        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
-        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
-        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
-        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
 
         self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
@@ -375,9 +374,9 @@ class SpaceInvaders(object):
         self.mysteryGroup = Group()
         self.allBlockers = Group()
         self.livesGroup = Group()
-        self.life1 = Life(715, 3, self.livesGroup)
-        self.life2 = Life(742, 3, self.livesGroup)
-        self.life3 = Life(769, 3, self.livesGroup)
+        self.life1 = Img(715, 3, 'ship', 23, 23, self.livesGroup)
+        self.life2 = Img(742, 3, 'ship', 23, 23, self.livesGroup)
+        self.life3 = Img(769, 3, 'ship', 23, 23, self.livesGroup)
 
         self.clock = time.Clock()
 
@@ -542,16 +541,7 @@ class SpaceInvaders(object):
             self.screen.blit(self.background, (0, 0))
             current_time = time.get_ticks()
             if self.mainScreen:
-                self.titleText.draw(self.screen)
-                self.titleText2.draw(self.screen)
-                self.enemy1Text.draw(self.screen)
-                self.enemy2Text.draw(self.screen)
-                self.enemy3Text.draw(self.screen)
-                self.enemy4Text.draw(self.screen)
-                self.screen.blit(self.enemy1, (318, 270))
-                self.screen.blit(self.enemy2, (318, 320))
-                self.screen.blit(self.enemy3, (318, 370))
-                self.screen.blit(self.enemy4, (299, 420))
+                self.mainScreenGroup.update()
 
                 for e in event.get():
                     if self.should_exit(e):
@@ -563,15 +553,15 @@ class SpaceInvaders(object):
                         self.mainScreen = False
 
             elif self.startGame:
-                self.scoreText.draw(self.screen)
-                self.scoreText2.draw(self.screen)
-                self.livesText.draw(self.screen)
+                self.scoreText.update()
+                self.scoreText2.update()
+                self.livesText.update()
                 self.livesGroup.update()
 
                 if not self.enemies and not self.explosionsGroup:
                     passed = current_time - self.gameTimer
                     if passed <= 3000:
-                        self.nextRoundText.draw(self.screen)
+                        self.nextRoundText.update()
                     elif 3000 < passed:
                         # Move enemies closer to bottom
                         self.enemyPosition += ENEMY_MOVE_DOWN
@@ -592,10 +582,8 @@ class SpaceInvaders(object):
                 # Reset enemy start position
                 self.enemyPosition = ENEMY_DEFAULT_POSITION
                 passed = current_time - self.timer
-                if passed < 750:
-                    self.gameOverText.draw(self.screen)
-                elif 1500 < passed < 2250:
-                    self.gameOverText.draw(self.screen)
+                if passed < 750 or 1500 < passed < 2250:
+                    self.gameOverText.update()
                 elif 3000 < passed:
                     self.mainScreen = True
 
