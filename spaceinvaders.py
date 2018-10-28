@@ -5,7 +5,7 @@
 
 import sys
 from os.path import abspath, dirname
-from random import randint, choice
+from random import choice
 
 from pygame import display, event, font, image, init, key,\
     mixer, time, transform, Surface
@@ -174,22 +174,15 @@ class EnemiesGroup(Group):
         self._update_speed()
 
     def is_column_dead(self, column):
-        for row in range(self.rows):
-            if self.enemies[row][column]:
-                return False
-        return True
+        return not any(self.enemies[row][column]
+                       for row in range(self.rows))
 
     def random_bottom(self):
         # type: () -> Optional[Enemy]
-        count = len(self._aliveColumns)
-        if count > 0:
-            random_index = randint(0, count - 1)
-            col = self._aliveColumns[random_index]
-            for row in range(self.rows, 0, -1):
-                enemy = self.enemies[row - 1][col]
-                if enemy:
-                    return enemy
-        return None
+        col = choice(self._aliveColumns)
+        col_enemies = (self.enemies[row - 1][col]
+                       for row in range(self.rows, 0, -1))
+        return next((en for en in col_enemies if en is not None), None)
 
     def _update_speed(self):
         if len(self) == 1:
@@ -392,9 +385,9 @@ class SpaceInvaders(object):
         self.clock = time.Clock()
 
     def reset(self, score, new_game=False):
-        [gr.empty() for gr in [self.allSprites, self.playerGroup, self.bullets,
-                               self.explosionsGroup, self.mysteryGroup,
-                               self.enemyBullets]]
+        for gr in (self.allSprites, self.playerGroup, self.explosionsGroup,
+                   self.bullets, self.mysteryGroup, self.enemyBullets):
+            gr.empty()
         self.player = Ship(self.allSprites, self.playerGroup)
         Mystery(self.allSprites, self.mysteryGroup)
         self.make_enemies()
@@ -486,12 +479,11 @@ class SpaceInvaders(object):
         self.enemies = enemies
 
     def make_enemies_shoot(self):
-        if (time.get_ticks() - self.timer) > 700:
+        if (time.get_ticks() - self.timer) > 700 and self.enemies:
             enemy = self.enemies.random_bottom()
-            if enemy:
-                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
-                       self.enemyBullets, self.allSprites)
-                self.timer = time.get_ticks()
+            Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
+                   self.enemyBullets, self.allSprites)
+            self.timer = time.get_ticks()
 
     def inc_score(self, score):
         self.score += score
@@ -522,11 +514,11 @@ class SpaceInvaders(object):
         players = groupcollide(self.playerGroup, self.enemyBullets,
                                True, True).keys()
         for playerShip in players:
-            if self.livesGroup.has(self.life3):
+            if self.life3.alive():
                 self.life3.kill()
-            elif self.livesGroup.has(self.life2):
+            elif self.life2.alive():
                 self.life2.kill()
-            elif self.livesGroup.has(self.life1):
+            elif self.life1.alive():
                 self.life1.kill()
             else:
                 self.gameOver = True
