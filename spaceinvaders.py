@@ -574,14 +574,15 @@ class SpaceInvaders(object):
                         self.mainScreen = False
 
             elif self.startGame:
+                self.scoreText.draw(self.screen)
+                self.scoreText2.draw(self.screen)
+                self.livesText.draw(self.screen)
+                self.livesGroup.update()
+
                 if not self.enemies and not self.explosionsGroup:
                     passed = current_time - self.gameTimer
                     if passed <= 3000:
-                        self.scoreText.draw(self.screen)
-                        self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
-                        self.livesText.draw(self.screen)
-                        self.livesGroup.update()
                     elif 3000 < passed:
                         # Move enemies closer to bottom
                         self.enemyPosition += ENEMY_MOVE_DOWN
@@ -590,10 +591,6 @@ class SpaceInvaders(object):
                 else:
                     self.play_main_music(current_time)
                     self.allBlockers.update()
-                    self.scoreText.draw(self.screen)
-                    self.scoreText2.draw(self.screen)
-                    self.livesText.draw(self.screen)
-                    self.livesGroup.update()
                     self.check_input()
                     keys = key.get_pressed()
                     self.enemies.update(current_time)
