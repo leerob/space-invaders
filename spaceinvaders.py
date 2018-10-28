@@ -552,7 +552,8 @@ class SpaceInvaders(object):
                           self.explosionsGroup)
 
         if self.enemies.bottom >= 540:
-            if groupcollide(self.enemies, self.playerGroup, True, True):
+            if groupcollide(self.enemies, self.playerGroup, True, True)\
+                    or self.enemies.bottom >= 600:
                 self.gameOver = True
                 self.startGame = False
 
