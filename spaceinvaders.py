@@ -43,6 +43,9 @@ IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
 ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 EVENT_SHIP_CREATE = USEREVENT + 0
+SCREEN_MAIN = 1
+SCREEN_GAME = 2
+SCREEN_OVER = 3
 
 
 class Ship(Sprite):
@@ -75,11 +78,7 @@ class Bullet(Sprite):
 
 
 class Enemy(Sprite):
-    row_scores = {0: 30,
-                  1: 20,
-                  2: 20,
-                  3: 10,
-                  4: 10}
+    row_scores = {0: 30, 1: 20, 2: 20, 3: 10, 4: 10}
     row_images = {0: [transform.scale(IMAGES['enemy1_2'], (40, 35)),
                       transform.scale(IMAGES['enemy1_1'], (40, 35))],
                   1: [transform.scale(IMAGES['enemy2_2'], (40, 35)),
@@ -340,9 +339,7 @@ class SpaceInvaders(object):
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
         self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
-        self.startGame = False
-        self.mainScreen = True
-        self.gameOver = False
+        self.screenType = SCREEN_MAIN
         self.score = 0
         # Counter for enemy starting position (increased each new round)
         self.enemyPosition = ENEMY_DEFAULT_POSITION
@@ -380,20 +377,13 @@ class SpaceInvaders(object):
 
         self.clock = time.Clock()
 
-    def reset(self, score, new_game=False):
+    def reset(self, score):
         for gr in (self.allSprites, self.playerGroup, self.explosionsGroup,
                    self.bullets, self.mysteryGroup, self.enemyBullets):
             gr.empty()
         self.player = Ship(self.allSprites, self.playerGroup)
         Mystery(self.allSprites, self.mysteryGroup)
         self.make_enemies()
-        # Only create blockers on a new game, not a new round
-        if new_game:
-            self.allBlockers.empty()
-            self.allBlockers.add(self.make_blockers(0),
-                                 self.make_blockers(200),
-                                 self.make_blockers(400),
-                                 self.make_blockers(600))
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
         self.score = score
@@ -517,17 +507,15 @@ class SpaceInvaders(object):
             elif self.life1.alive():
                 self.life1.kill()
             else:
-                self.gameOver = True
-                self.startGame = False
+                self.screenType = SCREEN_OVER
             self.sounds['shipexplosion'].play()
             ShipExplosion(playerShip.rect.x, playerShip.rect.y,
                           self.explosionsGroup)
 
         if self.enemies.bottom >= 540:
-            if groupcollide(self.enemies, self.playerGroup, True, True)\
-                    or self.enemies.bottom >= 600:
-                self.gameOver = True
-                self.startGame = False
+            groupcollide(self.enemies, self.playerGroup, True, True)
+            if not self.player.alive() or self.enemies.bottom >= 600:
+                self.screenType = SCREEN_OVER
 
         groupcollide(self.bullets, self.allBlockers, True, True)
         groupcollide(self.enemyBullets, self.allBlockers, True, True)
@@ -540,7 +528,7 @@ class SpaceInvaders(object):
         while True:
             self.screen.blit(self.background, (0, 0))
             current_time = time.get_ticks()
-            if self.mainScreen:
+            if self.screenType == SCREEN_MAIN:
                 self.mainScreenGroup.update()
 
                 for e in event.get():
@@ -548,11 +536,16 @@ class SpaceInvaders(object):
                         sys.exit()
                     if e.type == KEYUP:
                         self.livesGroup.add(self.life1, self.life2, self.life3)
-                        self.reset(0, True)
-                        self.startGame = True
-                        self.mainScreen = False
+                        self.reset(0)
+                        # Only create blockers on a new game, not a new round
+                        self.allBlockers.empty()
+                        self.allBlockers.add(self.make_blockers(0),
+                                             self.make_blockers(200),
+                                             self.make_blockers(400),
+                                             self.make_blockers(600))
+                        self.screenType = SCREEN_GAME
 
-            elif self.startGame:
+            elif self.screenType == SCREEN_GAME:
                 self.scoreText.update()
                 self.scoreText2.update()
                 self.livesText.update()
@@ -578,14 +571,14 @@ class SpaceInvaders(object):
                     self.check_collisions()
                     self.make_enemies_shoot()
 
-            elif self.gameOver:
+            elif self.screenType == SCREEN_OVER:
                 # Reset enemy start position
                 self.enemyPosition = ENEMY_DEFAULT_POSITION
                 passed = current_time - self.timer
                 if passed < 750 or 1500 < passed < 2250:
                     self.gameOverText.update()
                 elif 3000 < passed:
-                    self.mainScreen = True
+                    self.screenType = SCREEN_MAIN
 
                 for e in event.get():
                     if self.should_exit(e):
