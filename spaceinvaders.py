@@ -187,10 +187,6 @@ class EnemiesGroup(Group):
             self.moveTime = 400
 
     def _kill(self, enemy):
-        # On double hit calls twice for same enemy, so check before
-        if not self.enemies[enemy.row][enemy.column]:
-            return  # Already dead
-
         self.enemies[enemy.row][enemy.column] = None
         is_column_dead = self.is_column_dead(enemy.column)
         if is_column_dead:
@@ -200,14 +196,14 @@ class EnemiesGroup(Group):
             while self._rightAliveColumn > 0 and is_column_dead:
                 self._rightAliveColumn -= 1
                 self._rightDeadColumns += 1
-                self.rightAddMove = self._rightDeadColumns * 5
+                self.rightAddMove += 5
                 is_column_dead = self.is_column_dead(self._rightAliveColumn)
 
         elif enemy.column == self._leftAliveColumn:
             while self._leftAliveColumn < self.columns and is_column_dead:
                 self._leftAliveColumn += 1
                 self._leftDeadColumns += 1
-                self.leftAddMove = self._leftDeadColumns * 5
+                self.leftAddMove += 5
                 is_column_dead = self.is_column_dead(self._leftAliveColumn)
 
 
@@ -253,11 +249,11 @@ class Mystery(Sprite):
 
 
 class EnemyExplosion(Sprite):
-    def __init__(self, x, y, row, *groups):
+    def __init__(self, enemy, *groups):
         Sprite.__init__(self, *groups)
-        self.image = transform.scale(self.get_image(row), (40, 35))
+        self.image = transform.scale(self.get_image(enemy.row), (40, 35))
         self.image2 = transform.scale(self.image, (50, 45))
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.rect = self.image.get_rect(topleft=(enemy.rect.x, enemy.rect.y))
         self.timer = time.get_ticks()
 
     @staticmethod
@@ -276,9 +272,10 @@ class EnemyExplosion(Sprite):
 
 
 class MysteryExplosion(Sprite):
-    def __init__(self, x, y, score, *groups):
+    def __init__(self, mystery, *groups):
         Sprite.__init__(self, *groups)
-        self.text = Text(FONT, 20, str(score), WHITE, x + 20, y + 6)
+        self.text = Text(FONT, 20, str(mystery.score), WHITE,
+                         mystery.rect.x + 20, mystery.rect.y + 6)
         self.timer = time.get_ticks()
 
     def update(self, current_time):
@@ -290,10 +287,10 @@ class MysteryExplosion(Sprite):
 
 
 class ShipExplosion(Sprite):
-    def __init__(self, x, y, *groups):
+    def __init__(self, ship, *groups):
         Sprite.__init__(self, *groups)
         self.image = IMAGES['ship']
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
         self.timer = time.get_ticks()
 
     def update(self, current_time):
@@ -437,7 +434,7 @@ class SpaceInvaders(object):
         for e in event.get():
             if self.should_exit(e):
                 sys.exit()
-            if e.type == KEYDOWN:
+            elif e.type == KEYDOWN:
                 if e.key == K_SPACE:
                     if not self.bullets and self.player.alive():
                         y = self.player.rect.y + 5
@@ -451,7 +448,7 @@ class SpaceInvaders(object):
                             Bullet(self.player.rect.x + 38, y, -15, 'laser',
                                    self.bullets, self.allSprites)
                             self.sounds['shoot2'].play()
-            if e.type == EVENT_SHIP_CREATE:
+            elif e.type == EVENT_SHIP_CREATE:
                 self.player = Ship(self.allSprites, self.playerGroup)
 
     def make_enemies(self):
@@ -478,28 +475,23 @@ class SpaceInvaders(object):
     def check_collisions(self):
         groupcollide(self.bullets, self.enemyBullets, True, True)
 
-        enemies = groupcollide(self.enemies, self.bullets,
-                               True, True).keys()
-        for enemy in enemies:
+        for enemy in groupcollide(self.enemies, self.bullets,
+                                  True, True).keys():
             self.sounds['invaderkilled'].play()
             self.inc_score(enemy.score)
-            EnemyExplosion(enemy.rect.x, enemy.rect.y, enemy.row,
-                           self.explosionsGroup)
+            EnemyExplosion(enemy, self.explosionsGroup)
             self.gameTimer = time.get_ticks()
 
-        mysteries = groupcollide(self.mysteryGroup, self.bullets,
-                                 True, True).keys()
-        for mystery in mysteries:
+        for mystery in groupcollide(self.mysteryGroup, self.bullets,
+                                    True, True).keys():
             mystery.mysteryEntered.stop()
             self.sounds['mysterykilled'].play()
             self.inc_score(mystery.score)
-            MysteryExplosion(mystery.rect.x, mystery.rect.y, mystery.score,
-                             self.explosionsGroup)
+            MysteryExplosion(mystery, self.explosionsGroup)
             Mystery(self.allSprites, self.mysteryGroup)
 
-        players = groupcollide(self.playerGroup, self.enemyBullets,
-                               True, True).keys()
-        for playerShip in players:
+        for playerShip in groupcollide(self.playerGroup, self.enemyBullets,
+                                       True, True).keys():
             if self.life3.alive():
                 self.life3.kill()
             elif self.life2.alive():
@@ -509,8 +501,7 @@ class SpaceInvaders(object):
             else:
                 self.screenType = SCREEN_OVER
             self.sounds['shipexplosion'].play()
-            ShipExplosion(playerShip.rect.x, playerShip.rect.y,
-                          self.explosionsGroup)
+            ShipExplosion(playerShip, self.explosionsGroup)
 
         if self.enemies.bottom >= 540:
             groupcollide(self.enemies, self.playerGroup, True, True)
