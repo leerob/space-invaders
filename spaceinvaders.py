@@ -40,6 +40,7 @@ IMG_NAMES = ['ship', 'mystery',
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 
+BLOCKERS_POSITION = 450
 ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 EVENT_SHIP_CREATE = USEREVENT + 0
@@ -159,7 +160,7 @@ class EnemiesGroup(Group):
                 self.moveNumber += 1
 
             self.timer += self.moveTime
-            event.post(Event(EVENT_ENEMY_MOVE_NOTE))
+            event.post(Event(EVENT_ENEMY_MOVE_NOTE, {}))
 
     def add_internal(self, *sprites):
         super(Group, self).add_internal(*sprites)
@@ -302,7 +303,7 @@ class ShipExplosion(Sprite):
             game.screen.blit(self.image, self.rect)
         elif 900 < passed:
             self.kill()
-            event.post(Event(EVENT_SHIP_CREATE))
+            event.post(Event(EVENT_SHIP_CREATE, {}))
 
 
 class Img(Sprite):
@@ -405,7 +406,7 @@ class SpaceInvaders(object):
         for row in range(4):
             for column in range(9):
                 x = 50 + offset + (column * 10)
-                y = 450 + (row * 10)
+                y = BLOCKERS_POSITION + (row * 10)
                 Blocker(x, y, 10, GREEN, blocker_group)
         return blocker_group
 
@@ -500,7 +501,7 @@ class SpaceInvaders(object):
         groupcollide(self.enemyBullets, self.allBlockers, True, True)
         # It's too hard to calc 50 en * 144 bl = 7200 collisions with 60 FPS.
         # Calc if really needed.
-        if self.enemies.bottom >= 450:
+        if self.enemies.bottom >= BLOCKERS_POSITION:
             groupcollide(self.enemies, self.allBlockers, False, True)
 
     def main(self):
@@ -513,7 +514,7 @@ class SpaceInvaders(object):
                 for e in event.get():
                     if self.should_exit(e):
                         sys.exit()
-                    if e.type == KEYUP:
+                    elif e.type == KEYUP:
                         self.livesGroup.add(self.life1, self.life2, self.life3)
                         self.reset(0)
                         # Only create blockers on a new game, not a new round
