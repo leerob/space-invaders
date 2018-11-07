@@ -44,6 +44,7 @@ ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 EVENT_SHIP_CREATE = USEREVENT + 0
 EVENT_ENEMY_SHOOT = USEREVENT + 1
+EVENT_ENEMY_MOVE_NOTE = USEREVENT + 2
 SCREEN_MAIN = 1
 SCREEN_GAME = 2
 SCREEN_OVER = 3
@@ -158,6 +159,7 @@ class EnemiesGroup(Group):
                 self.moveNumber += 1
 
             self.timer += self.moveTime
+            event.post(Event(EVENT_ENEMY_MOVE_NOTE))
 
     def add_internal(self, *sprites):
         super(Group, self).add_internal(*sprites)
@@ -382,7 +384,6 @@ class SpaceInvaders(object):
         self.player = Ship(self.allSprites, self.playerGroup)
         Mystery(self.allSprites, self.mysteryGroup)
         self.make_enemies()
-        self.noteTimer = time.get_ticks()
         self.score = score
         self.scoreText2 = Text(FONT, 20, str(self.score), GREEN, 85, 5)
         self.noteIndex = 0
@@ -417,16 +418,6 @@ class SpaceInvaders(object):
             note.set_volume(0.5)
         return notes
 
-    def play_main_music(self, current_time):
-        if current_time - self.noteTimer > self.enemies.moveTime:
-            note = self.musicNotes[self.noteIndex]
-            self.noteIndex += 1
-            if self.noteIndex >= len(self.musicNotes):
-                self.noteIndex = 0
-
-            note.play()
-            self.noteTimer += self.enemies.moveTime
-
     @staticmethod
     def should_exit(evt):
         # type: (event.EventType) -> bool
@@ -456,6 +447,11 @@ class SpaceInvaders(object):
                 enemy = self.enemies.random_bottom()
                 Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
                        self.enemyBullets, self.allSprites)
+            elif e.type == EVENT_ENEMY_MOVE_NOTE:
+                self.musicNotes[self.noteIndex].play()
+                self.noteIndex += 1
+                if self.noteIndex >= len(self.musicNotes):
+                    self.noteIndex = 0
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -552,7 +548,6 @@ class SpaceInvaders(object):
                         self.enemyPosition += ENEMY_MOVE_DOWN
                         self.reset(self.score)
                 else:
-                    self.play_main_music(current_time)
                     self.allBlockers.update()
                     self.check_input()
                     keys = key.get_pressed()
