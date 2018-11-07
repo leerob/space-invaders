@@ -332,8 +332,17 @@ class SpaceInvaders(object):
         #   ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
         mixer.pre_init(44100, -16, 1, 4096)
         init()
-        self.sounds = self.init_sounds()
-        self.musicNotes = self.init_music_notes()
+        # Init sounds
+        self.sounds = {}
+        for name in ['shoot', 'shoot2', 'invaderkilled', 'mysterykilled',
+                     'shipexplosion']:
+            self.sounds[name] = Sound(SOUND_PATH + '{}.wav'.format(name))
+            self.sounds[name].set_volume(0.2)
+        # Init notes
+        self.musicNotes = [Sound(SOUND_PATH + '{}.wav'.format(i))
+                           for i in range(4)]
+        for note in self.musicNotes:
+            note.set_volume(0.5)
         self.noteIndex = 0
 
         self.caption = display.set_caption('Space Invaders')
@@ -399,24 +408,6 @@ class SpaceInvaders(object):
                 y = 450 + (row * 10)
                 Blocker(x, y, 10, GREEN, blocker_group)
         return blocker_group
-
-    @staticmethod
-    def init_sounds():
-        # type: () -> Dict[str, Sound]
-        sounds = {}
-        for name in ['shoot', 'shoot2', 'invaderkilled', 'mysterykilled',
-                     'shipexplosion']:
-            sounds[name] = Sound(SOUND_PATH + '{}.wav'.format(name))
-            sounds[name].set_volume(0.2)
-        return sounds
-
-    @staticmethod
-    def init_music_notes():
-        # type: () -> List[Sound]
-        notes = [Sound(SOUND_PATH + '{}.wav'.format(i)) for i in range(4)]
-        for note in notes:
-            note.set_volume(0.5)
-        return notes
 
     @staticmethod
     def should_exit(evt):
