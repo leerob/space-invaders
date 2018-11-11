@@ -4,6 +4,7 @@
 # Created by Lee Robinson
 
 import sys
+from itertools import cycle
 from os.path import abspath, dirname
 from random import choice
 
@@ -56,13 +57,12 @@ class Ship(Sprite):
         super(Ship, self).__init__(*groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
-        self.speed = 5
 
     def update(self, keys, *args):
         if keys[K_LEFT] and self.rect.x > 10:
-            self.rect.x -= self.speed
+            self.rect.x -= 5
         if keys[K_RIGHT] and self.rect.x < 740:
-            self.rect.x += self.speed
+            self.rect.x += 5
         game.screen.blit(self.image, self.rect)
 
 
@@ -97,17 +97,13 @@ class Enemy(Sprite):
         self.row = row
         self.column = column
         super(Enemy, self).__init__(*groups)
-        self.images = Enemy.row_images[self.row]
-        self.index = 0
-        self.image = self.images[self.index]
+        self.imagesCycle = cycle(Enemy.row_images[self.row])
+        self.image = self.imagesCycle.next()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.score = self.row_scores[self.row]
 
     def toggle_image(self):
-        self.index += 1
-        if self.index >= len(self.images):
-            self.index = 0
-        self.image = self.images[self.index]
+        self.image = self.imagesCycle.next()
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
@@ -140,10 +136,8 @@ class EnemiesGroup(Group):
                 max_move = self.leftMoves + self.leftAddMove
 
             if self.moveNumber >= max_move:
-                if self.direction == 1:
-                    self.leftMoves = 30 + self.rightAddMove
-                elif self.direction == -1:
-                    self.rightMoves = 30 + self.leftAddMove
+                self.leftMoves = 30 + self.rightAddMove
+                self.rightMoves = 30 + self.leftAddMove
                 self.direction *= -1
                 self.moveNumber = 0
                 self.bottom += ENEMY_MOVE_DOWN
@@ -340,7 +334,7 @@ class SpaceInvaders(object):
                            for i in range(4)]
         for note in self.musicNotes:
             note.set_volume(0.5)
-        self.noteIndex = 0
+        self.musicNotesCycle = cycle(self.musicNotes)
 
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
@@ -388,7 +382,7 @@ class SpaceInvaders(object):
         self.player = Ship(self.allSprites, self.playerGroup)
         Mystery(self.allSprites, self.mysteryGroup)
         self.make_enemies()
-        self.noteIndex = 0
+        self.musicNotesCycle = cycle(self.musicNotes)
         event.clear()
         time.set_timer(EVENT_ENEMY_SHOOT, 700)
 
@@ -432,18 +426,15 @@ class SpaceInvaders(object):
                 Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
                        self.enemyBullets, self.allSprites)
             elif e.type == EVENT_ENEMY_MOVE_NOTE:
-                self.musicNotes[self.noteIndex].play()
-                self.noteIndex += 1
-                if self.noteIndex >= len(self.musicNotes):
-                    self.noteIndex = 0
+                self.musicNotesCycle.next().play()
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
         for row in range(5):
-            for column in range(10):
-                x = 157 + (column * 50)
+            for col in range(10):
+                x = 157 + (col * 50)
                 y = self.enemyPosition + (row * 45)
-                Enemy(x, y, row, column, enemies, self.allSprites)
+                Enemy(x, y, row, col, enemies, self.allSprites)
         enemies.bottom = self.enemyPosition + (4 * 45) + 35
         self.enemies = enemies
 
