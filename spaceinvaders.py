@@ -140,6 +140,7 @@ class EnemiesGroup(Group):
                 self.rightMoves = 30 + self.leftAddMove
                 self.direction *= -1
                 self.moveNumber = 0
+                self.bottom = 0
                 for enemy in self:
                     enemy.rect.y += ENEMY_MOVE_DOWN
                     enemy.toggle_image()
@@ -431,7 +432,6 @@ class SpaceInvaders(object):
                 x = 157 + (col * 50)
                 y = self.enemyPosition + (row * 45)
                 Enemy(x, y, row, col, enemies, self.allSprites)
-        enemies.bottom = self.enemyPosition + (4 * 45) + 35
         self.enemies = enemies
 
     def inc_score(self, score):
