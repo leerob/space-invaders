@@ -131,8 +131,6 @@ class EnemiesGroup(Group):
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
-        self._leftDeadColumns = 0
-        self._rightDeadColumns = 0
 
     def update(self, current_time):
         if current_time - self.timer > self.moveTime:
@@ -199,14 +197,12 @@ class EnemiesGroup(Group):
         if enemy.column == self._rightAliveColumn:
             while self._rightAliveColumn > 0 and is_column_dead:
                 self._rightAliveColumn -= 1
-                self._rightDeadColumns += 1
                 self.rightAddMove += 5
                 is_column_dead = self.is_column_dead(self._rightAliveColumn)
 
         elif enemy.column == self._leftAliveColumn:
             while self._leftAliveColumn < self.columns and is_column_dead:
                 self._leftAliveColumn += 1
-                self._leftDeadColumns += 1
                 self.leftAddMove += 5
                 is_column_dead = self.is_column_dead(self._leftAliveColumn)
 
