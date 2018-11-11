@@ -53,7 +53,7 @@ SCREEN_OVER = 3
 
 class Ship(Sprite):
     def __init__(self, *groups):
-        Sprite.__init__(self, *groups)
+        super(Ship, self).__init__(*groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
@@ -68,7 +68,7 @@ class Ship(Sprite):
 
 class Bullet(Sprite):
     def __init__(self, x, y, velocity, filename, *groups):
-        Sprite.__init__(self, *groups)
+        super(Bullet, self).__init__(*groups)
         self.image = IMAGES[filename]
         self.rect = self.image.get_rect(topleft=(x, y))
         self.velocity = velocity
@@ -96,8 +96,8 @@ class Enemy(Sprite):
     def __init__(self, x, y, row, column, *groups):
         self.row = row
         self.column = column
-        Sprite.__init__(self, *groups)
-        self.images = self.row_images[self.row]
+        super(Enemy, self).__init__(*groups)
+        self.images = Enemy.row_images[self.row]
         self.index = 0
         self.image = self.images[self.index]
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -115,7 +115,7 @@ class Enemy(Sprite):
 
 class EnemiesGroup(Group):
     def __init__(self, columns, rows):
-        Group.__init__(self)
+        super(EnemiesGroup, self).__init__()
         self.enemies = [[None] * columns for _ in range(rows)]
         self.columns = columns
         self.rows = rows
@@ -127,7 +127,7 @@ class EnemiesGroup(Group):
         self.leftMoves = 30
         self.moveNumber = 15
         self.timer = time.get_ticks()
-        self.bottom = 0
+        self.bottom = game.enemyPosition + ((rows - 1) * 45) + 35
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
@@ -163,12 +163,12 @@ class EnemiesGroup(Group):
             event.post(Event(EVENT_ENEMY_MOVE_NOTE, {}))
 
     def add_internal(self, *sprites):
-        super(Group, self).add_internal(*sprites)
+        super(EnemiesGroup, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
 
     def remove_internal(self, *sprites):
-        super(Group, self).remove_internal(*sprites)
+        super(EnemiesGroup, self).remove_internal(*sprites)
         for s in sprites:
             self._kill(s)
         self._update_speed()
@@ -213,7 +213,7 @@ class EnemiesGroup(Group):
 
 class Blocker(Sprite):
     def __init__(self, x, y, size, color_, *groups):
-        Sprite.__init__(self, *groups)
+        super(Blocker, self).__init__(*groups)
         self.image = Surface((size, size))
         self.image.fill(color_)
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -224,7 +224,7 @@ class Blocker(Sprite):
 
 class Mystery(Sprite):
     def __init__(self, *groups):
-        Sprite.__init__(self, *groups)
+        super(Mystery, self).__init__(*groups)
         self.image = transform.scale(IMAGES['mystery'], (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
         self.moveTime = 25000
@@ -254,7 +254,7 @@ class Mystery(Sprite):
 
 class EnemyExplosion(Sprite):
     def __init__(self, enemy, *groups):
-        Sprite.__init__(self, *groups)
+        super(EnemyExplosion, self).__init__(*groups)
         self.image = transform.scale(self.get_image(enemy.row), (40, 35))
         self.image2 = transform.scale(self.image, (50, 45))
         self.rect = self.image.get_rect(topleft=(enemy.rect.x, enemy.rect.y))
@@ -269,7 +269,7 @@ class EnemyExplosion(Sprite):
         passed = current_time - self.timer
         if passed <= 100:
             game.screen.blit(self.image, self.rect)
-        elif 100 < passed <= 200:
+        elif passed <= 200:
             game.screen.blit(self.image2, (self.rect.x - 6, self.rect.y - 6))
         elif 400 < passed:
             self.kill()
@@ -277,7 +277,7 @@ class EnemyExplosion(Sprite):
 
 class MysteryExplosion(Sprite):
     def __init__(self, mystery, *groups):
-        Sprite.__init__(self, *groups)
+        super(MysteryExplosion, self).__init__(*groups)
         self.text = Txt(FONT, 20, str(mystery.score), WHITE,
                         mystery.rect.x + 20, mystery.rect.y + 6)
         self.timer = time.get_ticks()
@@ -292,7 +292,7 @@ class MysteryExplosion(Sprite):
 
 class ShipExplosion(Sprite):
     def __init__(self, ship, *groups):
-        Sprite.__init__(self, *groups)
+        super(ShipExplosion, self).__init__(*groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
         self.timer = time.get_ticks()
@@ -308,7 +308,7 @@ class ShipExplosion(Sprite):
 
 class Img(Sprite):
     def __init__(self, x, y, filename, w, h, *groups):
-        Sprite.__init__(self, *groups)
+        super(Img, self).__init__(*groups)
         self.image = transform.scale(IMAGES[filename], (w, h))
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -318,13 +318,13 @@ class Img(Sprite):
 
 class Txt(Sprite):
     def __init__(self, font_, size, message, color_, x, y, *groups):
-        Sprite.__init__(self, *groups)
+        super(Txt, self).__init__(*groups)
         self.font = font.Font(font_, size)
-        self.surface = self.font.render(str(message), True, color_)
-        self.rect = self.surface.get_rect(topleft=(x, y))
+        self.image = self.font.render(str(message), True, color_)
+        self.rect = self.image.get_rect(topleft=(x, y))
 
     def update(self, *args):
-        game.screen.blit(self.surface, self.rect)
+        game.screen.blit(self.image, self.rect)
 
 
 class SpaceInvaders(object):
