@@ -140,10 +140,11 @@ class EnemiesGroup(Group):
                 self.rightMoves = 30 + self.leftAddMove
                 self.direction *= -1
                 self.moveNumber = 0
-                self.bottom += ENEMY_MOVE_DOWN
                 for enemy in self:
                     enemy.rect.y += ENEMY_MOVE_DOWN
                     enemy.toggle_image()
+                    if self.bottom < enemy.rect.y:
+                        self.bottom = enemy.rect.y + 35
             else:
                 velocity = 10 if self.direction == 1 else -10
                 for enemy in self:
