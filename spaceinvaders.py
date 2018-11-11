@@ -386,15 +386,13 @@ class SpaceInvaders(object):
         event.clear()
         time.set_timer(EVENT_ENEMY_SHOOT, 700)
 
-    @staticmethod
-    def make_blockers(offset):
-        blocker_group = Group()
-        for row in range(4):
-            for column in range(9):
-                x = 50 + offset + (column * 10)
-                y = BLOCKERS_POSITION + (row * 10)
-                Blocker(x, y, 10, GREEN, blocker_group)
-        return blocker_group
+    def make_blockers(self):
+        for offset in (50, 250, 450, 650):
+            for row in range(4):
+                for column in range(9):
+                    x = offset + (column * 10)
+                    y = BLOCKERS_POSITION + (row * 10)
+                    Blocker(x, y, 10, GREEN, self.allBlockers)
 
     @staticmethod
     def should_exit(evt):
@@ -502,10 +500,7 @@ class SpaceInvaders(object):
                         self.reset()
                         # Only create blockers on a new game, not a new round
                         self.allBlockers.empty()
-                        self.allBlockers.add(self.make_blockers(0),
-                                             self.make_blockers(200),
-                                             self.make_blockers(400),
-                                             self.make_blockers(600))
+                        self.make_blockers()
                         self.inc_score(-self.score)  # Set zero score
                         self.dashGroup.add(self.life1, self.life2, self.life3)
                         self.screenType = SCREEN_GAME
