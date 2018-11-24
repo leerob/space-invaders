@@ -98,12 +98,12 @@ class Enemy(Sprite):
         self.column = column
         super(Enemy, self).__init__(*groups)
         self.imagesCycle = cycle(Enemy.row_images[self.row])
-        self.image = self.imagesCycle.next()
+        self.image = next(self.imagesCycle)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.score = self.row_scores[self.row]
 
     def toggle_image(self):
-        self.image = self.imagesCycle.next()
+        self.image = next(self.imagesCycle)
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
@@ -421,7 +421,7 @@ class SpaceInvaders(object):
                 Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
                        self.enemyBullets, self.allSprites)
             elif e.type == EVENT_ENEMY_MOVE_NOTE:
-                self.musicNotesCycle.next().play()
+                next(self.musicNotesCycle).play()
             elif e.type == EVENT_MYSTERY:
                 Mystery(self.mysteryGroup, self.allSprites)
 
