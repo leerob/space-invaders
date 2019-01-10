@@ -75,42 +75,14 @@ class Enemy(sprite.Sprite):
         self.index = 0
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
-        self.direction = 1
-        self.rightMoves = 30
-        self.leftMoves = 30
-        self.moveNumber = 15
-        self.moveTime = 600
-        self.timer = time.get_ticks()
 
-    def update(self, keys, currentTime, enemies):
-        if currentTime - self.timer > self.moveTime:
-            if self.direction == 1:
-                maxMove = self.rightMoves + enemies.rightAddMove
-            else:
-                maxMove = self.leftMoves + enemies.leftAddMove
+    def toggle_image(self):
+        self.index += 1
+        if self.index >= len(self.images):
+            self.index = 0
+        self.image = self.images[self.index]
 
-            if self.moveNumber >= maxMove:
-                if self.direction == 1:
-                    self.leftMoves = 30 + enemies.rightAddMove
-                elif self.direction == -1:
-                    self.rightMoves = 30 + enemies.leftAddMove
-                self.direction *= -1
-                self.moveNumber = 0
-                self.rect.y += 35
-            elif self.direction == 1:
-                self.rect.x += 10
-                self.moveNumber += 1
-            elif self.direction == -1:
-                self.rect.x -= 10
-                self.moveNumber += 1
-
-            self.index += 1
-            if self.index >= len(self.images):
-                self.index = 0
-            self.image = self.images[self.index]
-
-            self.timer += self.moveTime
-
+    def update(self, *args):
         game.screen.blit(self.image, self.rect)
 
     def load_images(self):
@@ -134,17 +106,54 @@ class EnemiesGroup(sprite.Group):
         self.rows = rows
         self.leftAddMove = 0
         self.rightAddMove = 0
+        self.moveTime = 600
+        self.direction = 1
+        self.rightMoves = 30
+        self.leftMoves = 30
+        self.moveNumber = 15
+        self.timer = time.get_ticks()
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
         self._leftKilledColumns = 0
         self._rightKilledColumns = 0
 
-    def add(self, *sprites):
-        super(sprite.Group, self).add(*sprites)
+    def update(self, current_time):
+        if current_time - self.timer > self.moveTime:
+            if self.direction == 1:
+                max_move = self.rightMoves + self.rightAddMove
+            else:
+                max_move = self.leftMoves + self.leftAddMove
 
+            if self.moveNumber >= max_move:
+                if self.direction == 1:
+                    self.leftMoves = 30 + self.rightAddMove
+                elif self.direction == -1:
+                    self.rightMoves = 30 + self.leftAddMove
+                self.direction *= -1
+                self.moveNumber = 0
+                for enemy in self:
+                    enemy.rect.y += 35
+                    enemy.toggle_image()
+            else:
+                velocity = 10 if self.direction == 1 else -10
+                for enemy in self:
+                    enemy.rect.x += velocity
+                    enemy.toggle_image()
+                self.moveNumber += 1
+
+            self.timer += self.moveTime
+
+    def add_internal(self, *sprites):
+        super(EnemiesGroup, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
+
+    def remove_internal(self, *sprites):
+        super(EnemiesGroup, self).remove_internal(*sprites)
+        for s in sprites:
+            self.kill(s)
+        self.update_speed()
 
     def is_column_dead(self, column):
         for row in range(self.rows):
@@ -160,6 +169,12 @@ class EnemiesGroup(sprite.Group):
             if enemy:
                 return enemy
         return None
+
+    def update_speed(self):
+        if len(self) == 1:
+            self.moveTime = 200
+        elif len(self) <= 10:
+            self.moveTime = 400
 
     def kill(self, enemy):
         # on double hit calls twice for same enemy, so check before
@@ -403,8 +418,7 @@ class SpaceInvaders(object):
         self.noteIndex = 0
 
     def play_main_music(self, currentTime):
-        moveTime = self.enemies.sprites()[0].moveTime
-        if currentTime - self.noteTimer > moveTime:
+        if currentTime - self.noteTimer > self.enemies.moveTime:
             self.note = self.musicNotes[self.noteIndex]
             if self.noteIndex < 3:
                 self.noteIndex += 1
@@ -412,7 +426,7 @@ class SpaceInvaders(object):
                 self.noteIndex = 0
 
             self.note.play()
-            self.noteTimer += moveTime
+            self.noteTimer += self.enemies.moveTime
 
     def create_text(self):
         self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
@@ -515,14 +529,6 @@ class SpaceInvaders(object):
             if e.type == KEYUP:
                 self.startGame = True
                 self.mainScreen = False
-
-    def update_enemy_speed(self):
-        if len(self.enemies) <= 10:
-            for enemy in self.enemies:
-                enemy.moveTime = 400
-        if len(self.enemies) == 1:
-            for enemy in self.enemies:
-                enemy.moveTime = 200
 
     def check_collisions(self):
         collidedict = sprite.groupcollide(self.bullets, self.enemyBullets,
@@ -677,12 +683,12 @@ class SpaceInvaders(object):
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
                     self.check_input()
+                    self.enemies.update(currentTime)
                     self.allSprites.update(self.keys, currentTime,
                                            self.enemies)
                     self.explosionsGroup.update(self.keys, currentTime)
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, currentTime)
-                    self.update_enemy_speed()
 
                     if len(self.enemies) > 0:
                         self.make_enemies_shoot()
