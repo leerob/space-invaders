@@ -177,10 +177,6 @@ class EnemiesGroup(sprite.Group):
             self.moveTime = 400
 
     def kill(self, enemy):
-        # on double hit calls twice for same enemy, so check before
-        if not self.enemies[enemy.row][enemy.column]:
-            return  # nothing to kill
-
         self.enemies[enemy.row][enemy.column] = None
         isColumnDead = self.is_column_dead(enemy.column)
         if isColumnDead:
@@ -531,81 +527,53 @@ class SpaceInvaders(object):
                 self.mainScreen = False
 
     def check_collisions(self):
-        collidedict = sprite.groupcollide(self.bullets, self.enemyBullets,
-                                          True, False)
-        if collidedict:
-            for value in collidedict.values():
-                for currentSprite in value:
-                    self.enemyBullets.remove(currentSprite)
-                    self.allSprites.remove(currentSprite)
+        sprite.groupcollide(self.bullets, self.enemyBullets, True, True)
 
-        enemiesdict = sprite.groupcollide(self.bullets, self.enemies,
-                                          True, False)
-        if enemiesdict:
-            for value in enemiesdict.values():
-                for currentSprite in value:
-                    self.enemies.kill(currentSprite)
-                    self.sounds['invaderkilled'].play()
-                    score = self.calculate_score(currentSprite.row)
-                    explosion = Explosion(currentSprite.rect.x,
-                                          currentSprite.rect.y,
-                                          currentSprite.row, False, False,
-                                          score)
-                    self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(currentSprite)
-                    self.enemies.remove(currentSprite)
-                    self.gameTimer = time.get_ticks()
-                    break
+        for enemy in sprite.groupcollide(self.enemies, self.bullets,
+                                         True, True).keys():
+            self.sounds['invaderkilled'].play()
+            score = self.calculate_score(enemy.row)
+            explosion = Explosion(enemy.rect.x, enemy.rect.y, enemy.row,
+                                  False, False, score)
+            self.explosionsGroup.add(explosion)
+            self.gameTimer = time.get_ticks()
 
-        mysterydict = sprite.groupcollide(self.bullets, self.mysteryGroup,
-                                          True, True)
-        if mysterydict:
-            for value in mysterydict.values():
-                for currentSprite in value:
-                    currentSprite.mysteryEntered.stop()
-                    self.sounds['mysterykilled'].play()
-                    score = self.calculate_score(currentSprite.row)
-                    explosion = Explosion(currentSprite.rect.x,
-                                          currentSprite.rect.y,
-                                          currentSprite.row, False, True,
-                                          score)
-                    self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(currentSprite)
-                    self.mysteryGroup.remove(currentSprite)
-                    newShip = Mystery()
-                    self.allSprites.add(newShip)
-                    self.mysteryGroup.add(newShip)
-                    break
+        for mystery in sprite.groupcollide(self.mysteryGroup, self.bullets,
+                                           True, True).keys():
+            mystery.mysteryEntered.stop()
+            self.sounds['mysterykilled'].play()
+            score = self.calculate_score(mystery.row)
+            explosion = Explosion(mystery.rect.x, mystery.rect.y, mystery.row,
+                                  False, True, score)
+            self.explosionsGroup.add(explosion)
+            newShip = Mystery()
+            self.allSprites.add(newShip)
+            self.mysteryGroup.add(newShip)
 
-        bulletsdict = sprite.groupcollide(self.enemyBullets, self.playerGroup,
-                                          True, False)
-        if bulletsdict:
-            for value in bulletsdict.values():
-                for playerShip in value:
-                    if self.lives == 3:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life3)
-                        self.allSprites.remove(self.life3)
-                    elif self.lives == 2:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life2)
-                        self.allSprites.remove(self.life2)
-                    elif self.lives == 1:
-                        self.lives -= 1
-                        self.livesGroup.remove(self.life1)
-                        self.allSprites.remove(self.life1)
-                    elif self.lives == 0:
-                        self.gameOver = True
-                        self.startGame = False
-                    self.sounds['shipexplosion'].play()
-                    explosion = Explosion(playerShip.rect.x, playerShip.rect.y,
-                                          0, True, False, 0)
-                    self.explosionsGroup.add(explosion)
-                    self.allSprites.remove(playerShip)
-                    self.playerGroup.remove(playerShip)
-                    self.makeNewShip = True
-                    self.shipTimer = time.get_ticks()
-                    self.shipAlive = False
+        for player in sprite.groupcollide(self.playerGroup, self.enemyBullets,
+                                          True, True).keys():
+            if self.lives == 3:
+                self.lives -= 1
+                self.livesGroup.remove(self.life3)
+                self.allSprites.remove(self.life3)
+            elif self.lives == 2:
+                self.lives -= 1
+                self.livesGroup.remove(self.life2)
+                self.allSprites.remove(self.life2)
+            elif self.lives == 1:
+                self.lives -= 1
+                self.livesGroup.remove(self.life1)
+                self.allSprites.remove(self.life1)
+            elif self.lives == 0:
+                self.gameOver = True
+                self.startGame = False
+            self.sounds['shipexplosion'].play()
+            explosion = Explosion(player.rect.x, player.rect.y, 0,
+                                  True, False, 0)
+            self.explosionsGroup.add(explosion)
+            self.makeNewShip = True
+            self.shipTimer = time.get_ticks()
+            self.shipAlive = False
 
         if sprite.groupcollide(self.enemies, self.playerGroup, True, True):
             self.gameOver = True
