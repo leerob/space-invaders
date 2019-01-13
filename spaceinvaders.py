@@ -6,7 +6,7 @@
 from pygame import *
 import sys
 from os.path import abspath, dirname
-from random import randint, choice
+from random import choice
 
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
@@ -105,7 +105,7 @@ class Enemy(sprite.Sprite):
 class EnemiesGroup(sprite.Group):
     def __init__(self, columns, rows):
         sprite.Group.__init__(self)
-        self.enemies = [[0] * columns for _ in range(rows)]
+        self.enemies = [[None] * columns for _ in range(rows)]
         self.columns = columns
         self.rows = rows
         self.leftAddMove = 0
@@ -120,8 +120,6 @@ class EnemiesGroup(sprite.Group):
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
-        self._leftKilledColumns = 0
-        self._rightKilledColumns = 0
 
     def update(self, current_time):
         if current_time - self.timer > self.moveTime:
@@ -131,10 +129,8 @@ class EnemiesGroup(sprite.Group):
                 max_move = self.leftMoves + self.leftAddMove
 
             if self.moveNumber >= max_move:
-                if self.direction == 1:
-                    self.leftMoves = 30 + self.rightAddMove
-                elif self.direction == -1:
-                    self.rightMoves = 30 + self.leftAddMove
+                self.leftMoves = 30 + self.rightAddMove
+                self.rightMoves = 30 + self.leftAddMove
                 self.direction *= -1
                 self.moveNumber = 0
                 self.bottom = 0
@@ -164,19 +160,14 @@ class EnemiesGroup(sprite.Group):
         self.update_speed()
 
     def is_column_dead(self, column):
-        for row in range(self.rows):
-            if self.enemies[row][column]:
-                return False
-        return True
+        return not any(self.enemies[row][column]
+                       for row in range(self.rows))
 
     def random_bottom(self):
-        random_index = randint(0, len(self._aliveColumns) - 1)
-        col = self._aliveColumns[random_index]
-        for row in range(self.rows, 0, -1):
-            enemy = self.enemies[row - 1][col]
-            if enemy:
-                return enemy
-        return None
+        col = choice(self._aliveColumns)
+        col_enemies = (self.enemies[row - 1][col]
+                       for row in range(self.rows, 0, -1))
+        return next((en for en in col_enemies if en is not None), None)
 
     def update_speed(self):
         if len(self) == 1:
@@ -186,23 +177,21 @@ class EnemiesGroup(sprite.Group):
 
     def kill(self, enemy):
         self.enemies[enemy.row][enemy.column] = None
-        isColumnDead = self.is_column_dead(enemy.column)
-        if isColumnDead:
+        is_column_dead = self.is_column_dead(enemy.column)
+        if is_column_dead:
             self._aliveColumns.remove(enemy.column)
 
         if enemy.column == self._rightAliveColumn:
-            while self._rightAliveColumn > 0 and isColumnDead:
+            while self._rightAliveColumn > 0 and is_column_dead:
                 self._rightAliveColumn -= 1
-                self._rightKilledColumns += 1
-                self.rightAddMove = self._rightKilledColumns * 5
-                isColumnDead = self.is_column_dead(self._rightAliveColumn)
+                self.rightAddMove += 5
+                is_column_dead = self.is_column_dead(self._rightAliveColumn)
 
         elif enemy.column == self._leftAliveColumn:
-            while self._leftAliveColumn < self.columns and isColumnDead:
+            while self._leftAliveColumn < self.columns and is_column_dead:
                 self._leftAliveColumn += 1
-                self._leftKilledColumns += 1
-                self.leftAddMove = self._leftKilledColumns * 5
-                isColumnDead = self.is_column_dead(self._leftAliveColumn)
+                self.leftAddMove += 5
+                is_column_dead = self.is_column_dead(self._leftAliveColumn)
 
 
 class Blocker(sprite.Sprite):
@@ -486,14 +475,13 @@ class SpaceInvaders(object):
                                        self.livesGroup, self.mysteryShip)
 
     def make_enemies_shoot(self):
-        if (time.get_ticks() - self.timer) > 700:
+        if (time.get_ticks() - self.timer) > 700 and self.enemies:
             enemy = self.enemies.random_bottom()
-            if enemy:
-                self.enemyBullets.add(
-                    Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
-                           'enemylaser', 'center'))
-                self.allSprites.add(self.enemyBullets)
-                self.timer = time.get_ticks()
+            self.enemyBullets.add(
+                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
+                       'enemylaser', 'center'))
+            self.allSprites.add(self.enemyBullets)
+            self.timer = time.get_ticks()
 
     def calculate_score(self, row):
         scores = {0: 30,
@@ -663,9 +651,7 @@ class SpaceInvaders(object):
                     self.explosionsGroup.update(self.keys, currentTime)
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, currentTime)
-
-                    if len(self.enemies) > 0:
-                        self.make_enemies_shoot()
+                    self.make_enemies_shoot()
 
             elif self.gameOver:
                 currentTime = time.get_ticks()
