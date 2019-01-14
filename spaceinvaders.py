@@ -53,18 +53,15 @@ class Ship(sprite.Sprite):
 
 
 class Bullet(sprite.Sprite):
-    def __init__(self, xpos, ypos, direction, speed, filename, side):
-        sprite.Sprite.__init__(self)
+    def __init__(self, x, y, velocity, filename, *groups):
+        super(Bullet, self).__init__(*groups)
         self.image = IMAGES[filename]
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
-        self.speed = speed
-        self.direction = direction
-        self.side = side
-        self.filename = filename
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.velocity = velocity
 
-    def update(self, keys, *args):
+    def update(self, *args):
         game.screen.blit(self.image, self.rect)
-        self.rect.y += self.speed * self.direction
+        self.rect.y += self.velocity
         if self.rect.y < 15 or self.rect.y > 600:
             self.kill()
 
@@ -428,23 +425,16 @@ class SpaceInvaders(object):
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
                     if len(self.bullets) == 0 and self.shipAlive:
+                        y = self.player.rect.y + 5
                         if self.score < 1000:
-                            bullet = Bullet(self.player.rect.x + 23,
-                                            self.player.rect.y + 5, -1,
-                                            15, 'laser', 'center')
-                            self.bullets.add(bullet)
-                            self.allSprites.add(self.bullets)
+                            Bullet(self.player.rect.x + 23, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
                             self.sounds['shoot'].play()
                         else:
-                            leftbullet = Bullet(self.player.rect.x + 8,
-                                                self.player.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            rightbullet = Bullet(self.player.rect.x + 38,
-                                                 self.player.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
-                            self.bullets.add(leftbullet)
-                            self.bullets.add(rightbullet)
-                            self.allSprites.add(self.bullets)
+                            Bullet(self.player.rect.x + 8, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
+                            Bullet(self.player.rect.x + 38, y, -15, 'laser',
+                                   self.bullets, self.allSprites)
                             self.sounds['shoot2'].play()
 
     def make_enemies(self):
@@ -461,10 +451,8 @@ class SpaceInvaders(object):
     def make_enemies_shoot(self):
         if (time.get_ticks() - self.timer) > 700 and self.enemies:
             enemy = self.enemies.random_bottom()
-            self.enemyBullets.add(
-                Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
-                       'enemylaser', 'center'))
-            self.allSprites.add(self.enemyBullets)
+            Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 5, 'enemylaser',
+                   self.enemyBullets, self.allSprites)
             self.timer = time.get_ticks()
 
     def calculate_score(self, row):
