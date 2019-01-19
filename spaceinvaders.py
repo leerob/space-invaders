@@ -275,14 +275,14 @@ class EnemyExplosion(sprite.Sprite):
 class MysteryExplosion(sprite.Sprite):
     def __init__(self, mystery, score, *groups):
         super(MysteryExplosion, self).__init__(*groups)
-        self.text = Text(FONT, 20, str(score), WHITE,
-                         mystery.rect.x + 20, mystery.rect.y + 6)
+        self.text = Txt(FONT, 20, str(score), WHITE,
+                        mystery.rect.x + 20, mystery.rect.y + 6)
         self.timer = time.get_ticks()
 
     def update(self, current_time, *args):
         passed = current_time - self.timer
         if passed <= 200 or 400 < passed <= 600:
-            self.text.draw(game.screen)
+            self.text.update()
         elif 600 < passed:
             self.kill()
 
@@ -302,25 +302,24 @@ class ShipExplosion(sprite.Sprite):
             self.kill()
 
 
-class Life(sprite.Sprite):
-    def __init__(self, xpos, ypos):
-        sprite.Sprite.__init__(self)
-        self.image = IMAGES['ship']
-        self.image = transform.scale(self.image, (23, 23))
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
+class Img(sprite.Sprite):
+    def __init__(self, filename, x, y, w, h, *groups):
+        super(Img, self).__init__(*groups)
+        self.image = transform.scale(IMAGES[filename], (w, h))
+        self.rect = self.image.get_rect(topleft=(x, y))
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
 
 
-class Text(object):
-    def __init__(self, textFont, size, message, color, xpos, ypos):
-        self.font = font.Font(textFont, size)
-        self.surface = self.font.render(message, True, color)
-        self.rect = self.surface.get_rect(topleft=(xpos, ypos))
+class Txt(sprite.Sprite):
+    def __init__(self, font_, size, msg, color_, x, y, *groups):
+        super(Txt, self).__init__(*groups)
+        self.image = font.Font(font_, size).render(msg, True, color_)
+        self.rect = self.image.get_rect(topleft=(x, y))
 
-    def draw(self, surface):
-        surface.blit(self.surface, self.rect)
+    def update(self, *args):
+        game.screen.blit(self.image, self.rect)
 
 
 class SpaceInvaders(object):
@@ -338,22 +337,30 @@ class SpaceInvaders(object):
         self.gameOver = False
         # Counter for enemy starting position (increased each new round)
         self.enemyPosition = ENEMY_DEFAULT_POSITION
-        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
-        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
-                               201, 225)
-        self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
-        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
-        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
-        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
-        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
-        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
-        self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
-        self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
+        self.mainScreenGroup = sprite.Group(
+            Txt(FONT, 50, 'Space Invaders', WHITE, 164, 155),
+            Txt(FONT, 25, 'Press any key to continue', WHITE, 201, 225),
+            Img('enemy3_1', 318, 270, 40, 40),
+            Txt(FONT, 25, '   =   10 pts', GREEN, 368, 270),
+            Img('enemy2_2', 318, 320, 40, 40),
+            Txt(FONT, 25, '   =  20 pts', BLUE, 368, 320),
+            Img('enemy1_2', 318, 370, 40, 40),
+            Txt(FONT, 25, '   =  30 pts', PURPLE, 368, 370),
+            Img('mystery', 299, 420, 80, 40),
+            Txt(FONT, 25, '   =  ?????', RED, 368, 420),
+        )
+        self.gameOverTxt = Txt(FONT, 50, 'Game Over', WHITE, 250, 270)
+        self.nextRoundTxt = Txt(FONT, 50, 'Next Round', WHITE, 240, 270)
 
-        self.life1 = Life(715, 3)
-        self.life2 = Life(742, 3)
-        self.life3 = Life(769, 3)
-        self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
+        self.life1 = Img('ship', 715, 3, 23, 23)
+        self.life2 = Img('ship', 742, 3, 23, 23)
+        self.life3 = Img('ship', 769, 3, 23, 23)
+        self.dashGroup = sprite.Group(
+            Txt(FONT, 20, 'Score', WHITE, 5, 5),
+            Txt(FONT, 20, 'Lives ', WHITE, 640, 5),
+            self.life1, self.life2, self.life3,
+        )
+        self.scoreTxt = Txt(FONT, 20, str(0), GREEN, 85, 5)
 
     def reset(self, score):
         self.player = Ship()
@@ -365,13 +372,14 @@ class SpaceInvaders(object):
         self.enemyBullets = sprite.Group()
         self.make_enemies()
         self.allSprites = sprite.Group(self.player, self.enemies,
-                                       self.livesGroup, self.mysteryShip)
+                                       self.mysteryShip)
         self.keys = key.get_pressed()
 
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
         self.score = score
+        self.scoreTxt = Txt(FONT, 20, str(self.score), GREEN, 85, 5)
         self.create_audio()
         self.makeNewShip = False
         self.shipAlive = True
@@ -466,21 +474,8 @@ class SpaceInvaders(object):
 
         score = scores[row]
         self.score += score
+        self.scoreTxt = Txt(FONT, 20, str(self.score), GREEN, 85, 5)
         return score
-
-    def create_main_menu(self):
-        self.enemy1 = IMAGES['enemy3_1']
-        self.enemy1 = transform.scale(self.enemy1, (40, 40))
-        self.enemy2 = IMAGES['enemy2_2']
-        self.enemy2 = transform.scale(self.enemy2, (40, 40))
-        self.enemy3 = IMAGES['enemy1_2']
-        self.enemy3 = transform.scale(self.enemy3, (40, 40))
-        self.enemy4 = IMAGES['mystery']
-        self.enemy4 = transform.scale(self.enemy4, (80, 40))
-        self.screen.blit(self.enemy1, (318, 270))
-        self.screen.blit(self.enemy2, (318, 320))
-        self.screen.blit(self.enemy3, (318, 370))
-        self.screen.blit(self.enemy4, (299, 420))
 
     def check_collisions(self):
         sprite.groupcollide(self.bullets, self.enemyBullets, True, True)
@@ -538,10 +533,10 @@ class SpaceInvaders(object):
             self.makeNewShip = False
             self.shipAlive = True
 
-    def create_game_over(self, currentTime):
-        passed = currentTime - self.timer
+    def create_game_over(self, current_time):
+        passed = current_time - self.timer
         if passed < 750 or 1500 < passed < 2250:
-            self.gameOverText.draw(self.screen)
+            self.gameOverTxt.update()
         elif passed > 3000:
             self.mainScreen = True
 
@@ -553,13 +548,7 @@ class SpaceInvaders(object):
         while True:
             self.screen.blit(self.background, (0, 0))
             if self.mainScreen:
-                self.titleText.draw(self.screen)
-                self.titleText2.draw(self.screen)
-                self.enemy1Text.draw(self.screen)
-                self.enemy2Text.draw(self.screen)
-                self.enemy3Text.draw(self.screen)
-                self.enemy4Text.draw(self.screen)
-                self.create_main_menu()
+                self.mainScreenGroup.update()
                 for e in event.get():
                     if self.should_exit(e):
                         sys.exit()
@@ -569,7 +558,7 @@ class SpaceInvaders(object):
                                                         self.make_blockers(1),
                                                         self.make_blockers(2),
                                                         self.make_blockers(3))
-                        self.livesGroup.add(self.life1, self.life2, self.life3)
+                        self.dashGroup.add(self.life1, self.life2, self.life3)
                         self.reset(0)
                         self.startGame = True
                         self.mainScreen = False
@@ -578,13 +567,9 @@ class SpaceInvaders(object):
                 if not self.enemies and not self.explosionsGroup:
                     currentTime = time.get_ticks()
                     if currentTime - self.gameTimer < 3000:
-                        self.scoreText2 = Text(FONT, 20, str(self.score),
-                                               GREEN, 85, 5)
-                        self.scoreText.draw(self.screen)
-                        self.scoreText2.draw(self.screen)
-                        self.nextRoundText.draw(self.screen)
-                        self.livesText.draw(self.screen)
-                        self.livesGroup.update()
+                        self.nextRoundTxt.update()
+                        self.dashGroup.update()
+                        self.scoreTxt.update()
                         self.check_input()
                     if currentTime - self.gameTimer > 3000:
                         # Move enemies closer to bottom
@@ -595,11 +580,8 @@ class SpaceInvaders(object):
                     currentTime = time.get_ticks()
                     self.play_main_music(currentTime)
                     self.allBlockers.update(self.screen)
-                    self.scoreText2 = Text(FONT, 20, str(self.score), GREEN,
-                                           85, 5)
-                    self.scoreText.draw(self.screen)
-                    self.scoreText2.draw(self.screen)
-                    self.livesText.draw(self.screen)
+                    self.dashGroup.update()
+                    self.scoreTxt.update()
                     self.check_input()
                     self.enemies.update(currentTime)
                     self.allSprites.update(self.keys, currentTime)
