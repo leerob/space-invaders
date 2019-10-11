@@ -106,7 +106,7 @@ class ShipGroup(sprite.Group):
 
 
 class Bullet(sprite.Sprite):
-    def __init__(self, xpos, ypos, direction, speed, filename, side, multiplier):
+    def __init__(self, xpos, ypos, direction, speed, filename, side, multiplier=1.0):
         sprite.Sprite.__init__(self)
         self.image = IMAGES[filename]
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
