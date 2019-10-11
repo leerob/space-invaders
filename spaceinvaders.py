@@ -42,6 +42,8 @@ ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 ENEMY_HEALTH = 96
 
+BULLET_MAX_DAMAGE = 96
+
 
 class Ship(sprite.Sprite):
     def __init__(self, id):
@@ -60,7 +62,7 @@ class Ship(sprite.Sprite):
     def fire(self):
         bullet = Bullet(self.rect.x + 23,
                         self.rect.y + 5, -1,
-                        15, 'laser', 'center')
+                        15, 'laser', 'center', self.probability)
         game.bullets.add(bullet)
         game.allSprites.add(game.bullets)
         game.sounds['shoot'].play()
@@ -104,7 +106,7 @@ class ShipGroup(sprite.Group):
 
 
 class Bullet(sprite.Sprite):
-    def __init__(self, xpos, ypos, direction, speed, filename, side):
+    def __init__(self, xpos, ypos, direction, speed, filename, side, multiplier):
         sprite.Sprite.__init__(self)
         self.image = IMAGES[filename]
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
@@ -112,7 +114,7 @@ class Bullet(sprite.Sprite):
         self.direction = direction
         self.side = side
         self.filename = filename
-        self.damage = 48
+        self.damage = BULLET_MAX_DAMAGE * multiplier
 
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
