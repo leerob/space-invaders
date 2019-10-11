@@ -32,7 +32,7 @@ IMG_NAMES = ['ship', 'mystery',
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 POSITIONS = [20, 120, 220, 320, 420, 520, 620, 720]
-OFFSETS = [-50, 50, -150, 150, -250, 250, -350, 350]
+OFFSETS = [-100, 0, -200, 100, -300, 200, -400, 300]
 DISTRIBUTIONS = [25.0, 25.0, 15.0, 15.0, 7.0, 7.0, 3.0, 3.0]
 
 NUMBER_OF_SHIPS = 8
@@ -77,7 +77,7 @@ class ShipGroup(sprite.Group):
 
     def update(self, keys, *args):
         for ship in self:
-            ship.rect.x = OFFSETS[ship.id] + POSITIONS[self.position]
+            ship.rect.x = (OFFSETS[ship.id] + POSITIONS[self.position]) % 740
             ship.update()
 
     def add_internal(self, *sprites):
@@ -505,12 +505,12 @@ class SpaceInvaders(object):
                         #     self.allSprites.add(self.bullets)
                         #     self.sounds['shoot2'].play()
                 elif e.key == K_LEFT:
-                    if self.player.position > 0:
-                        self.player.position -= 1
+                    if self.player.position >= 0:
+                        self.player.position = (self.player.position - 1) % 8
                         self.player.update(self.keys)
                 elif e.key == K_RIGHT:
-                    if self.player.position < 7:
-                        self.player.position += 1
+                    if self.player.position <= 7:
+                        self.player.position = (self.player.position + 1) % 8
                         self.player.update(self.keys)
             # def update(self, keys, *args):
             # if keys[K_LEFT]:
