@@ -33,9 +33,9 @@ IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 POSITIONS = [20, 120, 220, 320, 420, 520, 620, 720]
 OFFSETS = [-50, 50, -150, 150, -250, 250, -350, 350]
-DISTRIBUTIONS = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+DISTRIBUTIONS = [25.0, 25.0, 15.0, 15.0, 7.0, 7.0, 3.0, 3.0]
 
-NUMBER_OF_SHIPS = 2
+NUMBER_OF_SHIPS = 8
 
 BLOCKERS_POSITION = 450
 ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
@@ -47,9 +47,12 @@ class Ship(sprite.Sprite):
     def __init__(self, id):
         sprite.Sprite.__init__(self)
         self.id = id
-        self.image = IMAGES['ship']
+        self.probability = DISTRIBUTIONS[id] / 100.0
+        self.image = IMAGES['ship'].copy()
+        self.image.fill((255, 255, 255, self.probability * 500), None, BLEND_RGBA_MULT)
         self.speed = 5
         self.rect = self.image.get_rect(topleft=(POSITIONS[self.id], 540))
+
 
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
