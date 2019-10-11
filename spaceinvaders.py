@@ -32,6 +32,10 @@ IMG_NAMES = ['ship', 'mystery',
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 POSITIONS = [20, 120, 220, 320, 420, 520, 620, 720]
+OFFSETS = [-50, 50, -150, 150, -250, 250, -350, 350]
+DISTRIBUTIONS = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+NUMBER_OF_SHIPS = 2
 
 BLOCKERS_POSITION = 450
 ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
@@ -40,15 +44,60 @@ ENEMY_HEALTH = 96
 
 
 class Ship(sprite.Sprite):
-    def __init__(self):
+    def __init__(self, id):
         sprite.Sprite.__init__(self)
+        self.id = id
         self.image = IMAGES['ship']
         self.speed = 5
+        self.rect = self.image.get_rect(topleft=(POSITIONS[self.id], 540))
+
+    def update(self, *args):
+        game.screen.blit(self.image, self.rect)
+
+    def fire(self):
+        bullet = Bullet(self.rect.x + 23,
+                        self.rect.y + 5, -1,
+                        15, 'laser', 'center')
+        game.bullets.add(bullet)
+        game.allSprites.add(game.bullets)
+        game.sounds['shoot'].play()
+
+
+class ShipGroup(sprite.Group):
+    def __init__(self, number_of_ships):
+        sprite.Group.__init__(self)
+        self.ships = [None] * number_of_ships
+        self.number_of_ships = number_of_ships
         self.position = 4
-        self.rect = self.image.get_rect(topleft=(POSITIONS[self.position], 540))
 
     def update(self, keys, *args):
-        game.screen.blit(self.image, self.rect)
+        for ship in self:
+            ship.rect.x = OFFSETS[ship.id] + POSITIONS[self.position]
+            ship.update()
+
+    def add_internal(self, *sprites):
+        super(ShipGroup, self).add_internal(*sprites)
+        for s in sprites:
+            self.ships[s.id] = s
+
+    def remove_internal(self, *sprites):
+        super(ShipGroup, self).remove_internal(*sprites)
+        for s in sprites:
+            self.kill(s)
+
+    def fire(self):
+        for ship in self:
+            ship.fire()
+
+    def kill(self, ship):
+        self.ships[ship.id] = None
+
+    def explode_ships(self, explosionsGroup):
+        for ship in self.ships:
+            print("boom")
+            if ship is not None:
+                ship.kill()
+                # ShipExplosion(ship, sprite.Group())
 
 
 class Bullet(sprite.Sprite):
@@ -361,7 +410,8 @@ class SpaceInvaders(object):
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
     def reset(self, score):
-        self.player = Ship()
+        self.player = ShipGroup(NUMBER_OF_SHIPS)
+        self.make_ships()
         self.playerGroup = sprite.Group(self.player)
         self.explosionsGroup = sprite.Group()
         self.bullets = sprite.Group()
@@ -431,31 +481,32 @@ class SpaceInvaders(object):
                 if e.key == K_SPACE:
                     if len(self.bullets) == 0 and self.shipAlive:
                         if self.score < 1000:
-                            bullet = Bullet(self.player.rect.x + 23,
-                                            self.player.rect.y + 5, -1,
-                                            15, 'laser', 'center')
-                            self.bullets.add(bullet)
-                            self.allSprites.add(self.bullets)
-                            self.sounds['shoot'].play()
-                        else:
-                            leftbullet = Bullet(self.player.rect.x + 8,
-                                                self.player.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            rightbullet = Bullet(self.player.rect.x + 38,
-                                                 self.player.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
-                            self.bullets.add(leftbullet)
-                            self.bullets.add(rightbullet)
-                            self.allSprites.add(self.bullets)
-                            self.sounds['shoot2'].play()
+                            self.player.fire()
+                            # bullet = Bullet(self.player.rect.x + 23,
+                            #                 self.player.rect.y + 5, -1,
+                            #                 15, 'laser', 'center')
+                            # self.bullets.add(bullet)
+                            # self.allSprites.add(self.bullets)
+                            # self.sounds['shoot'].play()
+                        # else:
+                        #     leftbullet = Bullet(self.player.rect.x + 8,
+                        #                         self.player.rect.y + 5, -1,
+                        #                         15, 'laser', 'left')
+                        #     rightbullet = Bullet(self.player.rect.x + 38,
+                        #                          self.player.rect.y + 5, -1,
+                        #                          15, 'laser', 'right')
+                        #     self.bullets.add(leftbullet)
+                        #     self.bullets.add(rightbullet)
+                        #     self.allSprites.add(self.bullets)
+                        #     self.sounds['shoot2'].play()
                 elif e.key == K_LEFT:
                     if self.player.position > 0:
                         self.player.position -= 1
-                        self.player.rect.x = POSITIONS[self.player.position]
+                        self.player.update(self.keys)
                 elif e.key == K_RIGHT:
                     if self.player.position < 7:
                         self.player.position += 1
-                        self.player.rect.x = POSITIONS[self.player.position]
+                        self.player.update(self.keys)
             # def update(self, keys, *args):
             # if keys[K_LEFT]:
             #     self.leftButton = 1
@@ -477,6 +528,15 @@ class SpaceInvaders(object):
                 enemies.add(enemy)
 
         self.enemies = enemies
+
+    def make_ships(self):
+        print("Make ships")
+        ships = ShipGroup(NUMBER_OF_SHIPS)
+        for i in range(NUMBER_OF_SHIPS):
+            ship = Ship(i)
+            ships.add(ship)
+        ships.update([])
+        self.player = ships
 
     def make_enemies_shoot(self):
         if (time.get_ticks() - self.timer) > 700 and self.enemies:
@@ -537,22 +597,30 @@ class SpaceInvaders(object):
             self.allSprites.add(newShip)
             self.mysteryGroup.add(newShip)
 
-        for player in sprite.groupcollide(self.playerGroup, self.enemyBullets,
+        collision_handled = False
+
+        for ships in sprite.groupcollide(self.playerGroup, self.enemyBullets,
                                           True, True).keys():
-            if self.life3.alive():
-                self.life3.kill()
-            elif self.life2.alive():
-                self.life2.kill()
-            elif self.life1.alive():
-                self.life1.kill()
-            else:
-                self.gameOver = True
-                self.startGame = False
-            self.sounds['shipexplosion'].play()
-            ShipExplosion(player, self.explosionsGroup)
-            self.makeNewShip = True
-            self.shipTimer = time.get_ticks()
-            self.shipAlive = False
+            if not collision_handled:
+                if self.life3.alive():
+                    self.life3.kill()
+                elif self.life2.alive():
+                    self.life2.kill()
+                elif self.life1.alive():
+                    self.life1.kill()
+                else:
+                    self.gameOver = True
+                    self.startGame = False
+                self.sounds['shipexplosion'].play()
+                self.player.explode_ships(self.explosionsGroup)
+                # for ships in self.playerGroup:
+                #     for ship in ships:
+                #         ShipExplosion(ship, self.explosionsGroup)
+                self.makeNewShip = True
+                self.shipTimer = time.get_ticks()
+                self.shipAlive = False
+
+                collision_handled = True
 
         if self.enemies.bottom >= 540:
             sprite.groupcollide(self.enemies, self.playerGroup, True, True)
@@ -567,7 +635,8 @@ class SpaceInvaders(object):
 
     def create_new_ship(self, createShip, currentTime):
         if createShip and (currentTime - self.shipTimer > 900):
-            self.player = Ship()
+            self.player = ShipGroup(NUMBER_OF_SHIPS)
+            self.make_ships()
             self.allSprites.add(self.player)
             self.playerGroup.add(self.player)
             self.makeNewShip = False
@@ -646,6 +715,7 @@ class SpaceInvaders(object):
                     self.livesText.draw(self.screen)
                     self.check_input()
                     self.enemies.update(currentTime)
+                    # self.ships.update(self.keys)
                     self.allSprites.update(self.keys, currentTime)
                     self.explosionsGroup.update(currentTime)
                     self.check_collisions()
