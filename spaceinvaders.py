@@ -31,6 +31,7 @@ IMG_NAMES = ['ship', 'mystery',
              'laser', 'enemylaser']
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
+POSITIONS = [20, 120, 220, 320, 420, 520, 620, 720]
 
 BLOCKERS_POSITION = 450
 ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
@@ -41,14 +42,11 @@ class Ship(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['ship']
-        self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
+        self.position = 4
+        self.rect = self.image.get_rect(topleft=(POSITIONS[self.position], 540))
 
     def update(self, keys, *args):
-        if keys[K_LEFT] and self.rect.x > 10:
-            self.rect.x -= self.speed
-        if keys[K_RIGHT] and self.rect.x < 740:
-            self.rect.x += self.speed
         game.screen.blit(self.image, self.rect)
 
 
@@ -446,6 +444,24 @@ class SpaceInvaders(object):
                             self.bullets.add(rightbullet)
                             self.allSprites.add(self.bullets)
                             self.sounds['shoot2'].play()
+                elif e.key == K_LEFT:
+                    if self.player.position > 0:
+                        self.player.position -= 1
+                        self.player.rect.x = POSITIONS[self.player.position]
+                elif e.key == K_RIGHT:
+                    if self.player.position < 7:
+                        self.player.position += 1
+                        self.player.rect.x = POSITIONS[self.player.position]
+            # def update(self, keys, *args):
+            # if keys[K_LEFT]:
+            #     self.leftButton = 1
+            # elif self.leftButton and self.position > 0:
+            #     print("go left")
+            #     self.rect.x = POSITIONS[self.position]
+            #     self.leftButton = 0
+            #
+            # if keys[K_RIGHT] and self.position < 7:
+            #     self.rect.x += self.speed
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
