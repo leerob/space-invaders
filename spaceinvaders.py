@@ -68,10 +68,7 @@ class Ship(sprite.Sprite):
         self.speed = 5
         self.rect = self.image.get_rect(topleft=(POSITIONS[self.id], 540))
 
-
     def update(self, *args):
-        self.image = IMAGES['ship'].copy()
-        self.image.fill((255, 255, 255, self.probability * 255), None, BLEND_RGBA_MULT)
         game.screen.blit(self.image, self.rect)
 
     def fire(self):
@@ -82,18 +79,30 @@ class Ship(sprite.Sprite):
         game.allSprites.add(game.bullets)
         game.sounds['shoot'].play()
 
+    def update_opacity(self, opacity):
+        self.image = IMAGES['ship'].copy()
+        self.image.fill((255, 255, 255, opacity * 255), None, BLEND_RGBA_MULT)
 
 
 class ShipGroup(sprite.Group):
-    def __init__(self, number_of_ships):
+    def __init__(self, number_of_ships, position):
         sprite.Group.__init__(self)
         self.ships = [None] * number_of_ships
         self.number_of_ships = number_of_ships
-        self.position = 4
+        self.position = position
+        self.hit_ship = None
+        self.measuring = False
+        self.timer = 0.0
 
     def update(self, keys, *args):
+        passed = time.get_ticks() - self.timer
+        if self.measuring and passed > 600:
+            self.measuring = False
+
         for ship in self:
             ship.rect.x = (OFFSETS[ship.id] + POSITIONS[self.position]) % 800
+            if not self.measuring:
+                ship.update_opacity(ship.probability)
             ship.update()
 
     def add_internal(self, *sprites):
@@ -113,15 +122,35 @@ class ShipGroup(sprite.Group):
     def kill(self, ship):
         self.ships[ship.id] = None
 
-    def explode_ships(self, explosionsGroup):
+    def explode_ships(self, explosionsGroup, hit_ship_id):
         for ship in self.ships:
             if ship is not None:
-                ship.kill()
+                if ship.id == hit_ship_id:
+                    ship.update_opacity(1.0)
+                    ship.update()
+                    self.hit_ship = ship
+                else:
+                    ship.kill()
+
                 # ShipExplosion(ship, sprite.Group())
 
     def update_probabilities(self, probabilities):
         for ship in self:
             ship.probability = np.linalg.norm(probabilities[ship.id])
+            ship.update_opacity(ship.probability)
+
+    def measure(self, hit_ship_id):
+        for ship in self.ships:
+            if ship is not None:
+                if ship.id == hit_ship_id:
+                    ship.update_opacity(1.0)
+                    self.hit_ship = ship
+                else:
+                    ship.update_opacity(0.0)
+                    ship.rect.x = 999999
+                ship.update()
+        self.measuring = True
+        self.timer = time.get_ticks()
 
 
 class Bullet(sprite.Sprite):
@@ -436,12 +465,13 @@ class SpaceInvaders(object):
         self.life3 = Life(769, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
+        self.shipPosition = 4
 
         self.circuit_grid_model = CircuitGridModel(3, 10)
         self.circuit_grid = CircuitGrid(0, SCREEN_HEIGHT , self.circuit_grid_model)
 
     def reset(self, score):
-        self.player = ShipGroup(NUMBER_OF_SHIPS)
+        self.player = ShipGroup(NUMBER_OF_SHIPS, self.shipPosition)
         self.make_ships()
         self.playerGroup = sprite.Group(self.player)
         self.explosionsGroup = sprite.Group()
@@ -635,12 +665,15 @@ class SpaceInvaders(object):
         self.enemies = enemies
 
     def make_ships(self):
-        ships = ShipGroup(NUMBER_OF_SHIPS)
+        ships = ShipGroup(NUMBER_OF_SHIPS, self.shipPosition)
         for i in range(NUMBER_OF_SHIPS):
             ship = Ship(i)
             ships.add(ship)
         ships.update([])
         self.player = ships
+        circuit = self.circuit_grid.circuit_grid_model.compute_circuit()
+        state = self.get_probability_amplitudes(circuit, 3, 100)
+        self.player.update_probabilities(state)
 
     def make_enemies_shoot(self):
         if (time.get_ticks() - self.timer) > 700 and self.enemies:
@@ -706,32 +739,39 @@ class SpaceInvaders(object):
         circuit = self.circuit_grid.circuit_grid_model.compute_circuit()
         state = self.get_measurement(circuit, 3, 1)
 
-        # for ships in sprite.groupcollide(self.playerGroup, self.enemyBullets,
-        #                                   True, True).keys():
-        #
-        #     # print(type(state))
-        #     # print(state)
-        #     # self.player.update_probabilities(state)
-        #     if not collision_handled:
-        #         if self.life3.alive():
-        #             self.life3.kill()
-        #         elif self.life2.alive():
-        #             self.life2.kill()
-        #         elif self.life1.alive():
-        #             self.life1.kill()
-        #         else:
-        #             self.gameOver = True
-        #             self.startGame = False
-        #         self.sounds['shipexplosion'].play()
-        #         self.player.explode_ships(self.explosionsGroup)
-        #         # for ships in self.playerGroup:
-        #         #     for ship in ships:
-        #         #         ShipExplosion(ship, self.explosionsGroup)
-        #         self.makeNewShip = True
-        #         self.shipTimer = time.get_ticks()
-        #         self.shipAlive = False
-        #
-        #         collision_handled = True
+        hits = sprite.groupcollide(self.playerGroup, self.enemyBullets,
+                                          False, True)
+        measured = False
+
+        for ship in hits:
+            if not measured and ship.probability > 0.0:
+                self.player.measure(state)
+                measured = True
+
+            if state == ship.id:
+                # for bullet in hits[ship]:
+                #     bullet.kill()
+                if not collision_handled:
+                    if self.life3.alive():
+                        self.life3.kill()
+                    elif self.life2.alive():
+                        self.life2.kill()
+                    elif self.life1.alive():
+                        self.life1.kill()
+                    else:
+                        self.gameOver = True
+                        self.startGame = False
+                    self.sounds['shipexplosion'].play()
+                    self.player.explode_ships(self.explosionsGroup, ship.id)
+                    # for ships in self.playerGroup:
+                    #     for ship in ships:
+                    #         ShipExplosion(ship, self.explosionsGroup)
+                    self.makeNewShip = True
+                    self.shipPosition = self.player.position
+                    self.shipTimer = time.get_ticks()
+                    self.shipAlive = False
+
+                    collision_handled = True
 
         if self.enemies.bottom >= 540:
             sprite.groupcollide(self.enemies, self.playerGroup, True, True)
@@ -745,13 +785,17 @@ class SpaceInvaders(object):
             sprite.groupcollide(self.enemies, self.allBlockers, False, True)
 
     def create_new_ship(self, createShip, currentTime):
+
         if createShip and (currentTime - self.shipTimer > 900):
-            self.player = ShipGroup(NUMBER_OF_SHIPS)
+            self.player = ShipGroup(NUMBER_OF_SHIPS, self.shipPosition)
             self.make_ships()
             self.allSprites.add(self.player)
             self.playerGroup.add(self.player)
             self.makeNewShip = False
             self.shipAlive = True
+        elif createShip and (currentTime - self.shipTimer > 300):
+            if self.player.hit_ship:
+                self.player.hit_ship.kill()
 
     def create_game_over(self, currentTime):
         self.screen.blit(self.background, (0, 0))
