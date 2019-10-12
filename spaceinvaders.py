@@ -82,6 +82,8 @@ class Ship(sprite.Sprite):
 
     def update_opacity(self, opacity):
         self.image = IMAGES['ship'].copy()
+        if opacity > 0.0:
+            opacity = max(opacity, 0.18)
         self.image.fill((255, 255, 255, opacity * 255), None, BLEND_RGBA_MULT)
 
 
@@ -137,7 +139,8 @@ class ShipGroup(sprite.Group):
 
     def update_probabilities(self, probabilities):
         for ship in self:
-            ship.probability = np.linalg.norm(probabilities[ship.id])
+            p_amp = probabilities[ship.id]
+            ship.probability = p_amp.real*p_amp.real + p_amp.imag*p_amp.imag
             ship.update_opacity(ship.probability)
 
     def measure(self, hit_ship_id):
