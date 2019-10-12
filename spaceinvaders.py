@@ -7,6 +7,16 @@ from pygame import *
 import sys
 from os.path import abspath, dirname
 from random import choice
+import numpy as np
+
+from model.circuit_grid_model import CircuitGridModel
+from controls.circuit_grid import CircuitGrid, CircuitGridNode
+from copy import deepcopy
+
+from utils.navigation import MOVE_UP, MOVE_DOWN, MOVE_LEFT, MOVE_RIGHT
+from utils.parameters import WIDTH_UNIT, WINDOW_HEIGHT, WINDOW_WIDTH, \
+    LEFT, RIGHT, NOTHING, NO, YES, MEASURE_LEFT, MEASURE_RIGHT, WINDOW_SIZE
+from qiskit import BasicAer, execute, ClassicalRegister
 
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
@@ -21,7 +31,9 @@ BLUE = (80, 255, 239)
 PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
-SCREEN = display.set_mode((800, 600))
+SCREEN_HEIGHT = 600
+SCREEN = display.set_mode((800, 760))
+#screen = display.set_mode(WINDOW_SIZE)
 FONT = FONT_PATH + 'space_invaders.ttf'
 IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
@@ -360,6 +372,10 @@ class SpaceInvaders(object):
         self.life3 = Life(769, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
+
+        self.circuit_grid_model = CircuitGridModel(3, 10)
+        self.circuit_grid = CircuitGrid(0, SCREEN_HEIGHT , self.circuit_grid_model)
+
     def reset(self, score):
         self.player = Ship()
         self.playerGroup = sprite.Group(self.player)
@@ -422,11 +438,30 @@ class SpaceInvaders(object):
         # type: (pygame.event.EventType) -> bool
         return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
 
+    def get_probability_amplitudes(self, circuit, qubit_num, shot_num):
+        backend_sv_sim = BasicAer.get_backend('statevector_simulator')
+        job_sim = execute(circuit, backend_sv_sim, shots=shot_num)
+        result_sim = job_sim.result()
+        quantum_state = result_sim.get_statevector(circuit, decimals=3)
+        return quantum_state
+    
+    def get_measurement(self, circuit, qubit_num, shot_num):
+        backend_sv_sim = BasicAer.get_backend('qasm_simulator')
+        cr = ClassicalRegister(qubit_num)
+        measure_circuit = deepcopy(circuit)  # make a copy of circuit
+        measure_circuit.add_register(cr)    # add classical registers for measurement readout
+        measure_circuit.measure(measure_circuit.qregs[0], measure_circuit.cregs[0])
+        job_sim = execute(measure_circuit, backend_sv_sim, shots=shot_num)
+        result_sim = job_sim.result()
+        counts = result_sim.get_counts(circuit)
+        return int(list(counts.keys())[0], 2)
+
     def check_input(self):
         self.keys = key.get_pressed()
         for e in event.get():
             if self.should_exit(e):
                 sys.exit()
+            """      
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
                     if len(self.bullets) == 0 and self.shipAlive:
@@ -456,16 +491,69 @@ class SpaceInvaders(object):
                     if self.player.position < 7:
                         self.player.position += 1
                         self.player.rect.x = POSITIONS[self.player.position]
-            # def update(self, keys, *args):
-            # if keys[K_LEFT]:
-            #     self.leftButton = 1
-            # elif self.leftButton and self.position > 0:
-            #     print("go left")
-            #     self.rect.x = POSITIONS[self.position]
-            #     self.leftButton = 0
-            #
-            # if keys[K_RIGHT] and self.position < 7:
-            #     self.rect.x += self.speed
+            """
+            if e.type == KEYDOWN:
+                if e.key == K_ESCAPE:
+                    self.running = False
+                elif e.key == K_SPACE:
+                    if len(self.bullets) == 0 and self.shipAlive:
+                        if self.score < 1000:
+                            bullet = Bullet(self.player.rect.x + 23,
+                                            self.player.rect.y + 5, -1,
+                                            15, 'laser', 'center')
+                            self.bullets.add(bullet)
+                            self.allSprites.add(self.bullets)
+                            self.sounds['shoot'].play()
+                        else:
+                            leftbullet = Bullet(self.player.rect.x + 8,
+                                                self.player.rect.y + 5, -1,
+                                                15, 'laser', 'left')
+                            rightbullet = Bullet(self.player.rect.x + 38,
+                                                 self.player.rect.y + 5, -1,
+                                                 15, 'laser', 'right')
+                            self.bullets.add(leftbullet)
+                            self.bullets.add(rightbullet)
+                            self.allSprites.add(self.bullets)
+                            self.sounds['shoot2'].play()
+                else:
+                    if e.key == K_a:
+                        self.circuit_grid.move_to_adjacent_node(MOVE_LEFT)
+                    elif e.key == K_d:
+                        self.circuit_grid.move_to_adjacent_node(MOVE_RIGHT)
+                    elif e.key == K_w:
+                        self.circuit_grid.move_to_adjacent_node(MOVE_UP)
+                    elif e.key == K_s:
+                        self.circuit_grid.move_to_adjacent_node(MOVE_DOWN)
+                    elif e.key == K_x:
+                        self.circuit_grid.handle_input_x()
+                    elif e.key == K_y:
+                        self.circuit_grid.handle_input_y()
+                    elif e.key == K_z:
+                        self.circuit_grid.handle_input_z()
+                    elif e.key == K_h:
+                        self.circuit_grid.handle_input_h()
+                    elif e.key == K_BACKSPACE:
+                        self.circuit_grid.handle_input_delete()
+                    elif e.key == K_c:
+                        # Add or remove a control
+                        self.circuit_grid.handle_input_ctrl()
+                    elif e.key == K_UP:
+                        # Move a control qubit up
+                        self.circuit_grid.handle_input_move_ctrl(MOVE_UP)
+                    elif e.key == K_DOWN:
+                        # Move a control qubit down
+                        self.circuit_grid.handle_input_move_ctrl(MOVE_DOWN)
+                    elif e.key == K_LEFT:
+                        # Rotate a gate
+                        self.circuit_grid.handle_input_rotate(-np.pi / 8)
+                    elif e.key == K_RIGHT:
+                        # Rotate a gate
+                        self.circuit_grid.handle_input_rotate(np.pi / 8)
+                    circuit = self.circuit_grid.circuit_grid_model.compute_circuit()
+                    state = self.get_probability_amplitudes(circuit, 3, 100)
+                    print(state)
+                    self.circuit_grid.draw(self.screen)
+                    display.flip()
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -539,6 +627,9 @@ class SpaceInvaders(object):
 
         for player in sprite.groupcollide(self.playerGroup, self.enemyBullets,
                                           True, True).keys():
+            circuit = self.circuit_grid.circuit_grid_model.compute_circuit()
+            state = self.get_measurement(circuit, 3, 1)
+            print(state)
             if self.life3.alive():
                 self.life3.kill()
             elif self.life2.alive():
@@ -627,6 +718,7 @@ class SpaceInvaders(object):
                         self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
                         self.livesText.draw(self.screen)
+                        self.circuit_grid.draw(self.screen)
                         self.livesGroup.update()
                         self.check_input()
                     if currentTime - self.gameTimer > 3000:
@@ -644,6 +736,7 @@ class SpaceInvaders(object):
                     self.scoreText.draw(self.screen)
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
+                    self.circuit_grid.draw(self.screen)
                     self.check_input()
                     self.enemies.update(currentTime)
                     self.allSprites.update(self.keys, currentTime)
