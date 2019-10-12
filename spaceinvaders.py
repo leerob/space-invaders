@@ -164,7 +164,7 @@ class Enemy(sprite.Sprite):
     def update(self, *args):
         self.image = self.images[self.index].copy()
         alpha = 255 * self.health / ENEMY_HEALTH
-        self.image.fill((255, 255, 255, alpha), None, BLEND_RGBA_MULT)
+        self.image.fill((255, 255, 255, max(alpha, 50)), None, BLEND_RGBA_MULT)
         game.screen.blit(self.image, self.rect)
 
     def load_images(self):
