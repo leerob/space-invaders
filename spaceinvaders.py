@@ -172,11 +172,14 @@ class Bullet(sprite.Sprite):
         self.side = side
         self.filename = filename
         self.multiplier = multiplier
-        self.damage = BULLET_MAX_DAMAGE * multiplier
+        self.damage = BULLET_MAX_DAMAGE * multiplier + 1  # accounting for floating point issue
 
     def update(self, keys, *args):
         self.image = IMAGES[self.filename].copy()
-        self.image.fill((255, 255, 255, self.multiplier * 255), None, BLEND_RGBA_MULT)
+        alpha = 0
+        if self.multiplier > 0.01: # if alpha is above 0 basically
+            alpha = max(self.multiplier * 255, 128)
+        self.image.fill((255, 255, 255, alpha), None, BLEND_RGBA_MULT)
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
         if self.rect.y < 15 or self.rect.y > 650:
@@ -201,7 +204,7 @@ class Enemy(sprite.Sprite):
 
     def update(self, *args):
         self.image = self.images[self.index].copy()
-        alpha = 255 * self.health / ENEMY_HEALTH
+        alpha = max(255 * self.health / ENEMY_HEALTH, 50)
         self.image.fill((255, 255, 255, alpha), None, BLEND_RGBA_MULT)
         game.screen.blit(self.image, self.rect)
 
