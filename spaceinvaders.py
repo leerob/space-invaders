@@ -31,8 +31,8 @@ BLUE = (80, 255, 239)
 PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
-SCREEN_HEIGHT = 600
-SCREEN = display.set_mode((800, 760))
+SCREEN_HEIGHT = 640
+SCREEN = display.set_mode((800, 800))
 #screen = display.set_mode(WINDOW_SIZE)
 FONT = FONT_PATH + 'space_invaders.ttf'
 IMG_NAMES = ['ship', 'mystery',
@@ -47,6 +47,7 @@ POSITIONS = [20, 120, 220, 320, 420, 520, 620, 720]
 # OFFSETS = [-100, 0, -200, 100, -300, 200, -400, 300]
 OFFSETS = [-400, -300, -200, -100, 0, 100, 200, 300]
 DISTRIBUTIONS = [25.0, 25.0, 15.0, 15.0, 7.0, 7.0, 3.0, 3.0]
+LABEL_TEXT = ["|000>", "|001>", "|010>", "|011>", "|100>", "|101>", "|110>", "|111>"]
 
 NUMBER_OF_SHIPS = 8
 
@@ -152,6 +153,11 @@ class ShipGroup(sprite.Group):
         self.measuring = True
         self.timer = time.get_ticks()
 
+    def draw(self, screen):
+        for ship in self.ships:
+            if ship is not None and ship is Ship:
+                text = Text(FONT, 50, '000', WHITE, 50, 50)
+                text.draw(screen)
 
 class Bullet(sprite.Sprite):
     def __init__(self, xpos, ypos, direction, speed, filename, side, multiplier=1.0):
@@ -170,7 +176,7 @@ class Bullet(sprite.Sprite):
         self.image.fill((255, 255, 255, self.multiplier * 255), None, BLEND_RGBA_MULT)
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
-        if self.rect.y < 15 or self.rect.y > 600:
+        if self.rect.y < 15 or self.rect.y > 650:
             self.kill()
 
 
@@ -433,6 +439,25 @@ class Text(object):
         surface.blit(self.surface, self.rect)
 
 
+class Labels(object):
+    def __init__(self):
+        self.labels = []
+
+    def initialize(self, position):
+        self.labels = []
+        for i in range(8):
+            self.labels.append(Text(FONT, 20, LABEL_TEXT[i], WHITE, POSITIONS[position] + OFFSETS[i], 600))
+
+    def update(self, screen, position):
+        for i in range(len(self.labels)):
+            self.labels[i].rect = self.labels[i].surface.get_rect(topleft=((POSITIONS[position] + OFFSETS[i]) % 800, 600))
+        for label in self.labels:
+            label.draw(screen)
+
+
+
+
+
 class SpaceInvaders(object):
     def __init__(self):
         # It seems, in Linux buffersize=512 is not enough, use 4096 to prevent:
@@ -442,7 +467,7 @@ class SpaceInvaders(object):
         self.clock = time.Clock()
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
-        self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
+        self.background = image.load(IMAGE_PATH + 'qiskit.png').convert()
         self.startGame = False
         self.mainScreen = True
         self.gameOver = False
@@ -470,9 +495,12 @@ class SpaceInvaders(object):
         self.circuit_grid_model = CircuitGridModel(3, 10)
         self.circuit_grid = CircuitGrid(0, SCREEN_HEIGHT , self.circuit_grid_model)
 
+        self.labels = Labels()
+
     def reset(self, score):
         self.player = ShipGroup(NUMBER_OF_SHIPS, self.shipPosition)
         self.make_ships()
+        self.labels.initialize(self.player.position)
         self.playerGroup = sprite.Group(self.player)
         self.explosionsGroup = sprite.Group()
         self.bullets = sprite.Group()
@@ -789,6 +817,7 @@ class SpaceInvaders(object):
         if createShip and (currentTime - self.shipTimer > 900):
             self.player = ShipGroup(NUMBER_OF_SHIPS, self.shipPosition)
             self.make_ships()
+            self.labels.initialize(self.player.position)
             self.allSprites.add(self.player)
             self.playerGroup.add(self.player)
             self.makeNewShip = False
@@ -852,8 +881,10 @@ class SpaceInvaders(object):
                         self.nextRoundText.draw(self.screen)
                         self.livesText.draw(self.screen)
                         self.circuit_grid.draw(self.screen)
+                        # self.player.draw(self.screen)
                         self.livesGroup.update()
                         self.check_input()
+                        self.labels.update(self.screen, self.player.position)
                     if currentTime - self.gameTimer > 3000:
                         # Move enemies closer to bottom
                         self.enemyPosition += ENEMY_MOVE_DOWN
@@ -870,6 +901,8 @@ class SpaceInvaders(object):
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
                     self.circuit_grid.draw(self.screen)
+                    self.labels.update(self.screen, self.player.position)
+                    # self.player.draw(self.screen)
                     self.check_input()
                     self.enemies.update(currentTime)
                     # self.ships.update(self.keys)
