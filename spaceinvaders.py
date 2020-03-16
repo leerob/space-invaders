@@ -22,6 +22,7 @@ PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
 SCREEN = display.set_mode((800, 600))
+BASE_FPS = 60
 FONT = FONT_PATH + 'space_invaders.ttf'
 IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
@@ -65,8 +66,6 @@ class Bullet(sprite.Sprite):
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
-        if self.rect.y < 15 or self.rect.y > 600:
-            self.kill()
 
 
 class Enemy(sprite.Sprite):
@@ -357,15 +356,16 @@ class SpaceInvaders(object):
         self.life2 = Life(742, 3)
         self.life3 = Life(769, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
-
-    def reset(self, score):
-        self.player = Ship()
-        self.playerGroup = sprite.Group(self.player)
+        
         self.explosionsGroup = sprite.Group()
         self.bullets = sprite.Group()
         self.mysteryShip = Mystery()
         self.mysteryGroup = sprite.Group(self.mysteryShip)
         self.enemyBullets = sprite.Group()
+
+    def reset(self, score):
+        self.player = Ship()
+        self.playerGroup = sprite.Group(self.player)
         self.make_enemies()
         self.allSprites = sprite.Group(self.player, self.enemies,
                                        self.livesGroup, self.mysteryShip)
@@ -450,8 +450,7 @@ class SpaceInvaders(object):
                 else:
                     self.sounds['shoot2'].play()
                 
-                self.allSprites.add(self.bullets)
-                        
+                self.allSprites.add(self.bullets)                        
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -634,16 +633,19 @@ class SpaceInvaders(object):
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, currentTime)
                     self.make_enemies_shoot()
+                    
+                    if self.clock.get_fps() < BASE_FPS/2 and len(self.bullets) > 1000:
+                        print"fps droped"
+
 
             elif self.gameOver:
                 currentTime = time.get_ticks()
                 # Reset enemy starting position
                 self.enemyPosition = ENEMY_DEFAULT_POSITION
                 self.create_game_over(currentTime)
-
+            
             display.update()
             self.clock.tick(60)
-
 
 if __name__ == '__main__':
     game = SpaceInvaders()
