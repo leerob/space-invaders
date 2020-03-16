@@ -96,3 +96,6 @@ class BugReporter:
 
         with self.output_path.joinpath(BugReporter._BUGS_FOUND).open("wb") as bf:
             bf.write(message)
+
+
+bug_reporter = BugReporter("./bug reports")
