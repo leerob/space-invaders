@@ -33,31 +33,32 @@ class BugReporter:
 
     @staticmethod
     def __verify_and_load(path: Path) -> Set[Bug]:
-
-        if not all([path.exists(),
-                    path.joinpath(BugReporter._PUBLIC_KEY).exists(),
-                    path.joinpath(BugReporter._SIGNATURE).exists(),
-                    path.joinpath(BugReporter._BUGS_FOUND).exists()]):
-            return set()
-
-        with path.joinpath(BugReporter._PUBLIC_KEY).open("rb") as pubkey:
-            public_key = RSA.import_key(pubkey.read())
-
-        with path.joinpath(BugReporter._SIGNATURE).open("rb") as sig:
-            signature = sig.read()
-
-        with path.joinpath(BugReporter._BUGS_FOUND).open("rb") as bf:
-            bugs_found = bf.read()
-
-        # Verify that the signature matches bugs found
-        h = SHA256.new(bugs_found)
         try:
-            pkcs1_15.new(public_key).verify(h, signature)
-        except ValueError:
-            print("signature error")
-            return set()
+            if not all([path.exists(),
+                        path.joinpath(BugReporter._PUBLIC_KEY).exists(),
+                        path.joinpath(BugReporter._SIGNATURE).exists(),
+                        path.joinpath(BugReporter._BUGS_FOUND).exists()]):
+                return set()
 
-        return pickle.loads(bugs_found)
+            with path.joinpath(BugReporter._PUBLIC_KEY).open("rb") as pubkey:
+                public_key = RSA.import_key(pubkey.read())
+
+            with path.joinpath(BugReporter._SIGNATURE).open("rb") as sig:
+                signature = sig.read()
+
+            with path.joinpath(BugReporter._BUGS_FOUND).open("rb") as bf:
+                bugs_found = bf.read()
+
+            # Verify that the signature matches bugs found
+            h = SHA256.new(bugs_found)
+            try:
+                pkcs1_15.new(public_key).verify(h, signature)
+            except ValueError:
+                return set()
+
+            return pickle.loads(bugs_found)
+        except Exception:
+            return set()
 
     @staticmethod
     def __generate_private_key():
