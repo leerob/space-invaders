@@ -13,12 +13,16 @@ YELLOW = (241, 255, 0)
 BLUE = (80, 255, 239)
 PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
+GOLD = (255, 223, 0)
+SILVER = (196, 202, 206)
+BRONZE = (205, 127, 50)
 
 
 SCREEN = display.set_mode((800, 600))
 
 BASE_FPS = 60
 FONT = FONT_PATH + 'space_invaders.ttf'
+MONO_FONT = FONT_PATH + "SpaceMono-Regular.ttf"
 IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
              'enemy2_1', 'enemy2_2',

@@ -2,7 +2,10 @@
 
 # Space Invaders
 # Created by Lee Robinson
+from datetime import datetime, timedelta
+from pathlib import Path
 
+import attr
 from pygame import *
 import sys
 from os.path import abspath, dirname
@@ -10,14 +13,26 @@ from random import choice
 
 from Bullet import Bullet
 from Blocker import Blocker
+from bug_reporter import bug_reporter
 from consts import *
 from Mystery import Mystery, MysteryExplosion
 from Ship import Ship, ShipExplosion
 from Enemy import Enemy, EnemiesGroup, EnemyExplosion
 from UI import Life, Text
-from bug_reporter import bug_reporter
+from datetime import datetime
+import struct
+
+EPOCH = datetime(1970, 1, 1)
+RECORDS_PATH = Path("./records.data")
+
 
 class SpaceInvaders(object):
+
+    @attr.s
+    class Record:
+        time = attr.ib()
+        score = attr.ib()
+
     def __init__(self):
         # It seems, in Linux buffersize=512 is not enough, use 4096 to prevent:
         #   ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
@@ -29,6 +44,7 @@ class SpaceInvaders(object):
         self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
         self.startGame = False
         self.mainScreen = True
+        self.recordsScreen = False
         self.gameOver = False
         # Counter for enemy starting position (increased each new round)
         self.enemyPosition = ENEMY_DEFAULT_POSITION
@@ -54,6 +70,8 @@ class SpaceInvaders(object):
         self.mysteryShip = Mystery()
         self.mysteryGroup = sprite.Group(self.mysteryShip)
         self.enemyBullets = sprite.Group()
+
+        self.recordsPath = RECORDS_PATH
 
     def reset(self, score):
         self.player = Ship()
@@ -123,8 +141,8 @@ class SpaceInvaders(object):
                 num_bullets = (self.score // 1000) + 1
                 center = (self.player.rect.x + 23, self.player.rect.y + 5)
                 distance = 15
-                leftess_x = self.player.rect.x + 23 - (distance * num_bullets / 2)
-                rightest_x = self.player.rect.x + 23 + (distance * num_bullets / 2)
+                leftess_x = self.player.rect.x + 23 - (distance * num_bullets // 2)
+                rightest_x = self.player.rect.x + 23 + (distance * num_bullets // 2)
                 for i in range(0, num_bullets//2):
                     left_bullet = Bullet(leftess_x + (distance * i),
                                     self.player.rect.y + 5, -1,
@@ -223,6 +241,7 @@ class SpaceInvaders(object):
                 self.life1.kill()
             else:
                 self.gameOver = True
+                self.add_to_records(self.score)
                 self.startGame = False
             self.sounds['shipexplosion'].play()
             ShipExplosion(player, self.explosionsGroup)
@@ -234,6 +253,7 @@ class SpaceInvaders(object):
             sprite.groupcollide(self.enemies, self.playerGroup, True, True)
             if not self.player.alive() or self.enemies.bottom >= 600:
                 self.gameOver = True
+                self.add_to_records(self.score)
                 self.startGame = False
 
         sprite.groupcollide(self.bullets, self.allBlockers, True, True)
@@ -249,6 +269,26 @@ class SpaceInvaders(object):
             self.makeNewShip = False
             self.shipAlive = True
 
+    def create_records_screen(self, currentTime):
+        colors = [GOLD, SILVER, BRONZE] + 7 * [WHITE]
+        self.screen.blit(self.background, (0, 0))
+        passed = currentTime - self.timer
+        if passed < 40000:
+            Text(MONO_FONT, 50, 9 * " " + "Records" + 9 * " ", GREEN, 15, 0).draw(self.screen)
+            for i, record in enumerate(self.load_records()):
+                if i >= 10:
+                    break
+                date_as_string = record.time.strftime("%d/%m/%Y %H:%M")
+                number_of_dots = 25 - len(date_as_string) - len(str(record.score))
+                Text(MONO_FONT, 50, date_as_string + number_of_dots * "." + str(record.score), colors[i], 15
+                     , 50 * (i + 1)).draw(self.screen)
+        else:
+            self.mainScreen = True
+
+        for e in event.get():
+            if self.should_exit(e):
+                sys.exit()
+
     def create_game_over(self, currentTime):
         self.screen.blit(self.background, (0, 0))
         passed = currentTime - self.timer
@@ -261,7 +301,8 @@ class SpaceInvaders(object):
         elif 2250 < passed < 2750:
             self.screen.blit(self.background, (0, 0))
         elif passed > 3000:
-            self.mainScreen = True
+            self.recordsScreen = True
+            self.gameOver = False
 
         for e in event.get():
             if self.should_exit(e):
@@ -328,7 +369,7 @@ class SpaceInvaders(object):
                     self.create_new_ship(self.makeNewShip, currentTime)
                     self.make_enemies_shoot()
                     
-                    if self.clock.get_fps() < BASE_FPS/2 and len(self.bullets) > 1000:
+                    if self.clock.get_fps() < BASE_FPS//2 and len(self.bullets) > 1000:
                         bug_reporter.report_bug("Stress Test", \
                         "Bullet Hell just caused the frame rate to drop by more than half")
 
@@ -338,9 +379,49 @@ class SpaceInvaders(object):
                 # Reset enemy starting position
                 self.enemyPosition = ENEMY_DEFAULT_POSITION
                 self.create_game_over(currentTime)
+
+            elif self.recordsScreen:
+                currentTime = time.get_ticks()
+                self.create_records_screen(currentTime)
             
             display.update()
             self.clock.tick(60)
+
+    def load_records(self):
+        if not self.recordsPath.exists():
+            return []
+        with self.recordsPath.open("rb") as f:
+            records = f.readlines()
+        parsed_records = []
+        for record in records:
+            time_since_epoc, score = struct.unpack("II", record[:-1])
+            parsed_records.append(SpaceInvaders.Record(EPOCH + timedelta(seconds=time_since_epoc), score))
+        return parsed_records
+
+    def add_to_records(self, score):
+        current_time = datetime.now()
+        records = self.load_records()
+        records.append(SpaceInvaders.Record(current_time, score))
+        records.sort(key=lambda record: record.score)
+        records.reverse()
+        self._save_records(records[:10])
+
+    def _save_records(self, records):
+        with self.recordsPath.open("wb") as output:
+            for record in records:
+                time_since_epoc = int((record.time - EPOCH).total_seconds())
+                max_int = struct.unpack("I", b"\xFF" * 4)[0]
+                if time_since_epoc < 0 or time_since_epoc > max_int:
+                    bug_reporter.report_bug("Type 40 bug",
+                                            "Is it the past or is it the future??? There's something wrong with time...")
+                    # Make sure that the program won't crash
+                    time_since_epoc = time_since_epoc % max_int
+                    if time_since_epoc < 0:
+                        time_since_epoc += max_int
+
+                output.write(struct.pack("II", time_since_epoc, record.score))
+                output.write(b"\n")
+
 
 if __name__ == '__main__':
     game = SpaceInvaders()
