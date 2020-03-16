@@ -65,8 +65,6 @@ class Bullet(sprite.Sprite):
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
-        if self.rect.y < 15 or self.rect.y > 600:
-            self.kill()
 
 
 class Enemy(sprite.Sprite):
@@ -357,15 +355,16 @@ class SpaceInvaders(object):
         self.life2 = Life(742, 3)
         self.life3 = Life(769, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
-
-    def reset(self, score):
-        self.player = Ship()
-        self.playerGroup = sprite.Group(self.player)
+        
         self.explosionsGroup = sprite.Group()
         self.bullets = sprite.Group()
         self.mysteryShip = Mystery()
         self.mysteryGroup = sprite.Group(self.mysteryShip)
         self.enemyBullets = sprite.Group()
+
+    def reset(self, score):
+        self.player = Ship()
+        self.playerGroup = sprite.Group(self.player)
         self.make_enemies()
         self.allSprites = sprite.Group(self.player, self.enemies,
                                        self.livesGroup, self.mysteryShip)
