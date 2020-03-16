@@ -425,27 +425,33 @@ class SpaceInvaders(object):
         for e in event.get():
             if self.should_exit(e):
                 sys.exit()
-            if e.type == KEYDOWN:
-                if e.key == K_SPACE:
-                    if len(self.bullets) == 0 and self.shipAlive:
-                        if self.score < 1000:
-                            bullet = Bullet(self.player.rect.x + 23,
-                                            self.player.rect.y + 5, -1,
-                                            15, 'laser', 'center')
-                            self.bullets.add(bullet)
-                            self.allSprites.add(self.bullets)
-                            self.sounds['shoot'].play()
-                        else:
-                            leftbullet = Bullet(self.player.rect.x + 8,
-                                                self.player.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            rightbullet = Bullet(self.player.rect.x + 38,
-                                                 self.player.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
-                            self.bullets.add(leftbullet)
-                            self.bullets.add(rightbullet)
-                            self.allSprites.add(self.bullets)
-                            self.sounds['shoot2'].play()
+            if e.type == KEYDOWN and e.key == K_SPACE:
+                num_bullets = (self.score / 1000) + 1
+                center = (self.player.rect.x + 23, self.player.rect.y + 5)
+                distance = 15
+                leftess_x = self.player.rect.x + 23 - (distance * num_bullets / 2)
+                rightest_x = self.player.rect.x + 23 + (distance * num_bullets / 2)
+                for i in range(0, num_bullets/2):
+                    left_bullet = Bullet(leftess_x + (distance * i),
+                                    self.player.rect.y + 5, -1,
+                                    15, 'laser', 'left')
+                    right_bullet = Bullet(rightest_x - (distance * i),
+                                    self.player.rect.y + 5, -1,
+                                    15, 'laser', 'right')
+                    self.bullets.add(left_bullet)
+                    self.bullets.add(right_bullet)
+                if num_bullets%2 > 0:
+                    bullet = Bullet(self.player.rect.x + 23,
+                                    self.player.rect.y + 5, -1,
+                                    15, 'laser', 'center')
+                    self.bullets.add(bullet)
+                if 1 == num_bullets:
+                    self.sounds['shoot'].play()
+                else:
+                    self.sounds['shoot2'].play()
+                
+                self.allSprites.add(self.bullets)
+                        
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
