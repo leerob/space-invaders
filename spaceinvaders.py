@@ -22,6 +22,7 @@ PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
 SCREEN = display.set_mode((800, 600))
+BASE_FPS = 60
 FONT = FONT_PATH + 'space_invaders.ttf'
 IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
@@ -449,8 +450,7 @@ class SpaceInvaders(object):
                 else:
                     self.sounds['shoot2'].play()
                 
-                self.allSprites.add(self.bullets)
-                        
+                self.allSprites.add(self.bullets)                        
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
@@ -633,16 +633,19 @@ class SpaceInvaders(object):
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, currentTime)
                     self.make_enemies_shoot()
+                    
+                    if self.clock.get_fps() < BASE_FPS/2 and len(self.bullets) > 1000:
+                        print"fps droped"
+
 
             elif self.gameOver:
                 currentTime = time.get_ticks()
                 # Reset enemy starting position
                 self.enemyPosition = ENEMY_DEFAULT_POSITION
                 self.create_game_over(currentTime)
-
+            
             display.update()
             self.clock.tick(60)
-
 
 if __name__ == '__main__':
     game = SpaceInvaders()
