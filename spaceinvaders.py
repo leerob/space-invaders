@@ -195,6 +195,9 @@ class SpaceInvaders(object):
 
         score = scores[row]
         self.score += score
+        if self.score > 2550:
+            self.score %= 2550
+            bug_reporter.report_bug("Buffer overflow", "Did you really think you can get to 3000 points?")
         return score
 
     def create_main_menu(self):
