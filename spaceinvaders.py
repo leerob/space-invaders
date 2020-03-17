@@ -15,6 +15,7 @@ from Mystery import Mystery, MysteryExplosion
 from Ship import Ship, ShipExplosion
 from Enemy import Enemy, EnemiesGroup, EnemyExplosion
 from UI import Life, Text
+from bug_reporter import bug_reporter
 
 class SpaceInvaders(object):
     def __init__(self):
@@ -119,12 +120,12 @@ class SpaceInvaders(object):
             if self.should_exit(e):
                 sys.exit()
             if e.type == KEYDOWN and e.key == K_SPACE:
-                num_bullets = (self.score / 1000) + 1
+                num_bullets = (self.score // 1000) + 1
                 center = (self.player.rect.x + 23, self.player.rect.y + 5)
                 distance = 15
                 leftess_x = self.player.rect.x + 23 - (distance * num_bullets / 2)
                 rightest_x = self.player.rect.x + 23 + (distance * num_bullets / 2)
-                for i in range(0, num_bullets/2):
+                for i in range(0, num_bullets//2):
                     left_bullet = Bullet(leftess_x + (distance * i),
                                     self.player.rect.y + 5, -1,
                                     15, 'laser', 'left_'+str(i))
@@ -328,7 +329,8 @@ class SpaceInvaders(object):
                     self.make_enemies_shoot()
                     
                     if self.clock.get_fps() < BASE_FPS/2 and len(self.bullets) > 1000:
-                        print"fps droped"
+                        bug_reporter.report_bug("Stress Test", \
+                        "Bullet Hell just caused the frame rate to drop by more than half")
 
 
             elif self.gameOver:

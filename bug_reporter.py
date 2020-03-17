@@ -5,10 +5,10 @@ from typing import Set, Union
 from tkinter import Tk, messagebox
 
 import attr
-from Cryptodome import Random
-from Cryptodome.PublicKey import RSA
-from Cryptodome.Hash import SHA256
-from Cryptodome.Signature import pkcs1_15
+from Crypto import Random
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
+from Crypto.Signature import pkcs1_15
 import base64
 
 
