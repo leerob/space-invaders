@@ -57,6 +57,8 @@ class SpaceInvaders(object):
     def reset(self, score):
         self.player = Ship()
         self.playerGroup = sprite.Group(self.player)
+        self.mysteryShip = Mystery()
+        self.mysteryGroup = sprite.Group(self.mysteryShip)
         self.make_enemies()
         self.allSprites = sprite.Group(self.player, self.enemies,
                                        self.livesGroup, self.mysteryShip)
@@ -125,10 +127,10 @@ class SpaceInvaders(object):
                 for i in range(0, num_bullets/2):
                     left_bullet = Bullet(leftess_x + (distance * i),
                                     self.player.rect.y + 5, -1,
-                                    15, 'laser', 'left')
+                                    15, 'laser', 'left_'+str(i))
                     right_bullet = Bullet(rightest_x - (distance * i),
                                     self.player.rect.y + 5, -1,
-                                    15, 'laser', 'right')
+                                    15, 'laser', 'right_'+str(i))
                     self.bullets.add(left_bullet)
                     self.bullets.add(right_bullet)
                 if num_bullets%2 > 0:
