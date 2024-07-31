@@ -1,0 +1,19 @@
+{
+    "x": 0,
+    "circle": 1,
+    "square": 2,
+    "triangle": 3,
+    "share": 4,
+    "PS": 5,
+    "options": 6,
+    "left_stick_click": 7,
+    "right_stick_click": 8,
+    "L1": 9,
+    "R1": 10,
+    "up_arrow": 11,
+    "down_arrow": 12,
+    "left_arrow": 13,
+    "right_arrow": 14,
+    "touchpad": 15
+  
+    }

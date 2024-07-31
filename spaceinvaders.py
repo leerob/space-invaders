@@ -5,6 +5,8 @@
 
 from pygame import *
 import sys
+import os
+import json
 from os.path import abspath, dirname
 from random import choice
 
@@ -16,12 +18,13 @@ SOUND_PATH = BASE_PATH + '/sounds/'
 # Colors (R, G, B)
 WHITE = (255, 255, 255)
 GREEN = (78, 255, 87)
-YELLOW = (241, 255, 0)
+YELLOW = (255, 209, 0)
 BLUE = (80, 255, 239)
 PURPLE = (203, 0, 255)
 RED = (237, 28, 36)
 
-SCREEN = display.set_mode((800, 600))
+
+SCREEN = display.set_mode((0,0))
 FONT = FONT_PATH + 'space_invaders.ttf'
 IMG_NAMES = ['ship', 'mystery',
              'enemy1_1', 'enemy1_2',
@@ -32,22 +35,43 @@ IMG_NAMES = ['ship', 'mystery',
 IMAGES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha()
           for name in IMG_NAMES}
 
-BLOCKERS_POSITION = 450
-ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
+PLAYER_NAME = ['A', 'A', 'A']
+CURSOR_POSITION = 0
+CURSOR_LETTER = 0
+ROUND = 1
+
+BLOCKERS_POSITION = 1450
+ENEMY_DEFAULT_POSITION = 750  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 
+with open(os.path.join("controller-keys.json"), 'r+') as file:
+    button_keys = json.load(file)
+# 0: Left analog horizonal, 1: Left Analog Vertical, 2: Right Analog Horizontal
+# 3: Right Analog Vertical 4: Left Trigger, 5: Right Trigger
+analog_keys = {0:0, 1:0, 2:0, 3:0, 4:-1, 5: -1 }
+
+joystick.init()
+joysticks = []
+for i in range(joystick.get_count()):
+    joysticks.append(joystick.Joystick(i))
+for joystick in joysticks:
+    joystick.init()
 
 class Ship(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['ship']
-        self.rect = self.image.get_rect(topleft=(375, 540))
-        self.speed = 5
+        self.rect = self.image.get_rect(topleft=(375, 1540))
+        self.speed = 8
 
-    def update(self, keys, *args):
-        if keys[K_LEFT] and self.rect.x > 10:
+    def update(self, keys, buttons, *args):
+        if keys[K_LEFT] and self.rect.x > 100:
             self.rect.x -= self.speed
-        if keys[K_RIGHT] and self.rect.x < 740:
+        if keys[K_RIGHT] and self.rect.x < 1300:
+            self.rect.x += self.speed
+        if buttons['left_arrow'] and self.rect.x > 100:
+            self.rect.x -= self.speed
+        if buttons['right_arrow'] and self.rect.x < 1300:
             self.rect.x += self.speed
         game.screen.blit(self.image, self.rect)
 
@@ -65,9 +89,19 @@ class Bullet(sprite.Sprite):
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
         self.rect.y += self.speed * self.direction
-        if self.rect.y < 15 or self.rect.y > 600:
+        if self.rect.y < 700 or self.rect.y > 1600:
             self.kill()
 
+class Leaderboard():
+    def __init__(self):
+        self.total = 0
+        self.leaderboard
+    
+    def incrementScore(self):
+        self.total += 1
+    
+    def storeHighScore(self, name):
+        leaderboard
 
 class Enemy(sprite.Sprite):
     def __init__(self, row, column):
@@ -104,13 +138,14 @@ class Enemy(sprite.Sprite):
 
 class EnemiesGroup(sprite.Group):
     def __init__(self, columns, rows):
+        global ROUND
         sprite.Group.__init__(self)
         self.enemies = [[None] * columns for _ in range(rows)]
         self.columns = columns
         self.rows = rows
         self.leftAddMove = 0
         self.rightAddMove = 0
-        self.moveTime = 600
+        self.moveTime = 85 - (10 * ROUND)
         self.direction = 1
         self.rightMoves = 30
         self.leftMoves = 30
@@ -120,6 +155,7 @@ class EnemiesGroup(sprite.Group):
         self._aliveColumns = list(range(columns))
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
+        self.multiplier = 0.5 + ROUND / 2
 
     def update(self, current_time):
         if current_time - self.timer > self.moveTime:
@@ -140,11 +176,12 @@ class EnemiesGroup(sprite.Group):
                     if self.bottom < enemy.rect.y + 35:
                         self.bottom = enemy.rect.y + 35
             else:
-                velocity = 10 if self.direction == 1 else -10
+                velocity = 15 if self.direction == 1 else -15
                 for enemy in self:
                     enemy.rect.x += velocity
                     enemy.toggle_image()
                 self.moveNumber += 1
+                
 
             self.timer += self.moveTime
 
@@ -171,9 +208,9 @@ class EnemiesGroup(sprite.Group):
 
     def update_speed(self):
         if len(self) == 1:
-            self.moveTime = 200
+            self.moveTime -= 10
         elif len(self) <= 10:
-            self.moveTime = 400
+            self.moveTime -= 5
 
     def kill(self, enemy):
         self.enemies[enemy.row][enemy.column] = None
@@ -215,7 +252,7 @@ class Mystery(sprite.Sprite):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['mystery']
         self.image = transform.scale(self.image, (75, 35))
-        self.rect = self.image.get_rect(topleft=(-80, 45))
+        self.rect = self.image.get_rect(topleft=(-80, 800))
         self.row = 5
         self.moveTime = 25000
         self.direction = 1
@@ -224,7 +261,7 @@ class Mystery(sprite.Sprite):
         self.mysteryEntered.set_volume(0.3)
         self.playSound = True
 
-    def update(self, keys, currentTime, *args):
+    def update(self, keys, _buttons, currentTime, *args):
         resetTimer = False
         passed = currentTime - self.timer
         if passed > self.moveTime:
@@ -309,7 +346,7 @@ class Life(sprite.Sprite):
     def __init__(self, xpos, ypos):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['ship']
-        self.image = transform.scale(self.image, (23, 23))
+        self.image = transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect(topleft=(xpos, ypos))
 
     def update(self, *args):
@@ -318,12 +355,82 @@ class Life(sprite.Sprite):
 
 class Text(object):
     def __init__(self, textFont, size, message, color, xpos, ypos):
+        self.message = message
+        self.xpos = xpos
+        self.ypos = ypos
         self.font = font.Font(textFont, size)
         self.surface = self.font.render(message, True, color)
-        self.rect = self.surface.get_rect(topleft=(xpos, ypos))
+        self.rect = self.surface.get_rect(topleft=(self.xpos, ypos))
 
     def draw(self, surface):
         surface.blit(self.surface, self.rect)
+    
+    def move(self, position):
+        self.rect = self.surface.get_rect(topleft=(position, self.ypos))
+
+class NameInput():
+    def __init__(self, screen):
+        self.screen = screen
+        ###
+        ### move the ref to the current player and the cursor position to a global variable that isn't reset by the main game loop. 
+        ###
+        global PLAYER_NAME
+        global CURSOR_POSITION
+        self.letterOneText = Text(FONT, 50, PLAYER_NAME[0], WHITE, 625, 1410)
+        self.letterTwoText = Text(FONT, 50, PLAYER_NAME[1], WHITE, 675, 1410)
+        self.letterThreeText = Text(FONT, 50, PLAYER_NAME[2], WHITE, 725, 1410)
+        
+        self.letterOneText.draw(screen)
+        self.letterTwoText.draw(screen)
+        self.letterThreeText.draw(screen)
+
+        if CURSOR_POSITION == 0:
+            self.underline = Text(FONT, 50, '_', WHITE, 625, 1430)
+            self.underline.draw(self.screen)
+        if CURSOR_POSITION == 1:
+            self.underline = Text(FONT, 50, '_', WHITE, 675, 1430)
+            self.underline.draw(self.screen)
+        if CURSOR_POSITION == 2:
+            self.underline = Text(FONT, 50, '_', WHITE, 725, 1430)
+            self.underline.draw(self.screen)
+            
+    def handle_input(self, button):
+        global CURSOR_LETTER
+        global CURSOR_POSITION
+        global PLAYER_NAME
+        alph = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+        if button == button_keys['right_arrow']:
+            if CURSOR_POSITION < 2:
+                CURSOR_POSITION += 1
+            else: 
+                CURSOR_POSITION = 0
+            CURSOR_LETTER = alph.index(PLAYER_NAME[CURSOR_POSITION])
+        if button == button_keys['left_arrow']:
+            if CURSOR_POSITION > 0:
+                CURSOR_POSITION -= 1
+            else: 
+                CURSOR_POSITION = 2
+            CURSOR_LETTER = alph.index(PLAYER_NAME[CURSOR_POSITION])
+        if button == button_keys['down_arrow']:
+            if CURSOR_LETTER >= 0:
+                CURSOR_LETTER -= 1
+            else: 
+                CURSOR_LETTER = 25
+            PLAYER_NAME[CURSOR_POSITION] = alph[CURSOR_LETTER]
+        if button == button_keys['up_arrow']:
+            if CURSOR_LETTER < 27:
+                CURSOR_LETTER += 1
+            else: 
+                CURSOR_LETTER = 0
+
+        if CURSOR_POSITION == 0:
+            self.underline.move(625)
+        if CURSOR_POSITION == 1:
+            self.underline.move(675)
+        if CURSOR_POSITION == 2:
+            self.underline.move(725)
+
+
 
 
 class SpaceInvaders(object):
@@ -341,24 +448,31 @@ class SpaceInvaders(object):
         self.gameOver = False
         # Counter for enemy starting position (increased each new round)
         self.enemyPosition = ENEMY_DEFAULT_POSITION
-        self.titleText = Text(FONT, 50, 'Space Invaders', WHITE, 164, 155)
-        self.titleText2 = Text(FONT, 25, 'Press any key to continue', WHITE,
-                               201, 225)
-        self.gameOverText = Text(FONT, 50, 'Game Over', WHITE, 250, 270)
-        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 270)
-        self.enemy1Text = Text(FONT, 25, '   =   10 pts', GREEN, 368, 270)
-        self.enemy2Text = Text(FONT, 25, '   =  20 pts', BLUE, 368, 320)
-        self.enemy3Text = Text(FONT, 25, '   =  30 pts', PURPLE, 368, 370)
-        self.enemy4Text = Text(FONT, 25, '   =  ?????', RED, 368, 420)
-        self.scoreText = Text(FONT, 20, 'Score', WHITE, 5, 5)
-        self.livesText = Text(FONT, 20, 'Lives ', WHITE, 640, 5)
+        self.titleText = Text(FONT, 65, 'Course Invaders', YELLOW, 380, 1000)
+        self.titleText2 = Text(FONT, 30, 'Collect as many registrations as you can while', WHITE,
+                               260, 1100)
+        self.titleText3 = Text(FONT, 30, 'avoiding the aliens\' cancellations', WHITE,
+        380, 1140)
+                               
+        self.gameOverText = Text(FONT, 50, 'Game Over', RED, 535, 1250)
+        self.finalScoreText = Text(FONT, 50, 'Registrations:', WHITE, 420, 1310)
+        self.nextRoundText = Text(FONT, 50, 'Next Round', WHITE, 240, 1250)
+        self.enemy1Text = Text(FONT, 25, '=    10 pts', GREEN, 680, 1250)
+        self.enemy2Text = Text(FONT, 25, '=    20 pts', BLUE, 680, 1300)
+        self.enemy3Text = Text(FONT, 25, '=    30 pts', PURPLE, 680, 1350)
+        self.enemy4Text = Text(FONT, 25, '=    ?????', RED, 680, 1400)
+        self.scoreText = Text(FONT, 35, 'Registrations', WHITE, 250, 600)
+        self.livesText = Text(FONT, 35, 'Lives: ', WHITE, 940, 600)
 
-        self.life1 = Life(715, 3)
-        self.life2 = Life(742, 3)
-        self.life3 = Life(769, 3)
+        self.life1 = Life(1100, 600)
+        self.life2 = Life(1150, 600)
+        self.life3 = Life(1200, 600)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
     def reset(self, score):
+        global ROUND 
+        
+        ROUND += 1
         self.player = Ship()
         self.playerGroup = sprite.Group(self.player)
         self.explosionsGroup = sprite.Group()
@@ -370,7 +484,7 @@ class SpaceInvaders(object):
         self.allSprites = sprite.Group(self.player, self.enemies,
                                        self.livesGroup, self.mysteryShip)
         self.keys = key.get_pressed()
-
+        self.buttons = self.initButtons()
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
         self.shipTimer = time.get_ticks()
@@ -379,12 +493,19 @@ class SpaceInvaders(object):
         self.makeNewShip = False
         self.shipAlive = True
 
+    def initButtons(self):
+        buttons = {}
+        for key in button_keys.keys():
+            buttons[key] = False
+        return buttons
+
+
     def make_blockers(self, number):
         blockerGroup = sprite.Group()
         for row in range(4):
             for column in range(9):
-                blocker = Blocker(10, GREEN, row, column)
-                blocker.rect.x = 50 + (200 * number) + (column * blocker.width)
+                blocker = Blocker(10, YELLOW, row, column)
+                blocker.rect.x = 300 + (200 * number) + (column * blocker.width)
                 blocker.rect.y = BLOCKERS_POSITION + (row * blocker.height)
                 blockerGroup.add(blocker)
         return blockerGroup
@@ -419,6 +540,17 @@ class SpaceInvaders(object):
     def should_exit(evt):
         # type: (pygame.event.EventType) -> bool
         return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
+    
+    @staticmethod
+    def should_reset(evt):
+        # type: (pygame.event.EventType) -> bool
+        if evt.type == KEYUP:
+            return True
+        elif evt.type == JOYBUTTONUP:
+            if evt.button == button_keys['circle']:
+                return True
+
+
 
     def check_input(self):
         self.keys = key.get_pressed()
@@ -427,9 +559,9 @@ class SpaceInvaders(object):
                 sys.exit()
             if e.type == KEYDOWN:
                 if e.key == K_SPACE:
-                    if len(self.bullets) == 0 and self.shipAlive:
+                    if len(self.bullets) <= 15 and self.shipAlive:
                         if self.score < 1000:
-                            bullet = Bullet(self.player.rect.x + 23,
+                            bullet = Bullet(self.player.rect.x + 75,
                                             self.player.rect.y + 5, -1,
                                             15, 'laser', 'center')
                             self.bullets.add(bullet)
@@ -445,21 +577,55 @@ class SpaceInvaders(object):
                             self.bullets.add(leftbullet)
                             self.bullets.add(rightbullet)
                             self.allSprites.add(self.bullets)
-                            self.sounds['shoot2'].play()
+                            self.sounds['shoot2'].play()  
+            if e.type == JOYBUTTONDOWN:
+                if e.button == button_keys['x']:
+                    if len(self.bullets) <= 15 and self.shipAlive:
+                        if self.score < 1000:
+                            bullet = Bullet(self.player.rect.x + 75,
+                                            self.player.rect.y + 5, -1,
+                                            15, 'laser', 'center')
+                            self.bullets.add(bullet)
+                            self.allSprites.add(self.bullets)
+                            self.sounds['shoot'].play()
+                        else:
+                            leftbullet = Bullet(self.player.rect.x + 8,
+                                                self.player.rect.y + 5, -1,
+                                                15, 'laser', 'left')
+                            rightbullet = Bullet(self.player.rect.x + 38,
+                                                 self.player.rect.y + 5, -1,
+                                                 15, 'laser', 'right')
+                            self.bullets.add(leftbullet)
+                            self.bullets.add(rightbullet)
+                            self.allSprites.add(self.bullets)
+                            self.sounds['shoot2'].play()  
+                else:
+                    for btnKey in button_keys.keys():
+                        if e.button == button_keys[btnKey]:
+                            self.buttons[btnKey] = True
+            if e.type == JOYBUTTONUP:
+                if e.button == button_keys['x']:
+                    1 + 1
+                    #do nothing
+                else:
+                    for btnKey in button_keys.keys():
+                        if e.button == button_keys[btnKey]:
+                            self.buttons[btnKey] = False
+
 
     def make_enemies(self):
         enemies = EnemiesGroup(10, 5)
         for row in range(5):
             for column in range(10):
                 enemy = Enemy(row, column)
-                enemy.rect.x = 157 + (column * 50)
+                enemy.rect.x = 300 + (column * 80)
                 enemy.rect.y = self.enemyPosition + (row * 45)
                 enemies.add(enemy)
 
         self.enemies = enemies
 
     def make_enemies_shoot(self):
-        if (time.get_ticks() - self.timer) > 700 and self.enemies:
+        if (time.get_ticks() - self.timer) > 500 and self.enemies:
             enemy = self.enemies.random_bottom()
             self.enemyBullets.add(
                 Bullet(enemy.rect.x + 14, enemy.rect.y + 20, 1, 5,
@@ -489,10 +655,12 @@ class SpaceInvaders(object):
         self.enemy3 = transform.scale(self.enemy3, (40, 40))
         self.enemy4 = IMAGES['mystery']
         self.enemy4 = transform.scale(self.enemy4, (80, 40))
-        self.screen.blit(self.enemy1, (318, 270))
-        self.screen.blit(self.enemy2, (318, 320))
-        self.screen.blit(self.enemy3, (318, 370))
-        self.screen.blit(self.enemy4, (299, 420))
+        self.screen.blit(self.enemy1, (600, 1250))
+        self.screen.blit(self.enemy2, (600, 1300))
+        self.screen.blit(self.enemy3, (600, 1350))
+        self.screen.blit(self.enemy4, (575, 1400))
+        self.startText = Text(FONT, 40, "Press X to start the game", WHITE, 375, 1600)
+        self.startText.draw(self.screen)
 
     def check_collisions(self):
         sprite.groupcollide(self.bullets, self.enemyBullets, True, True)
@@ -531,9 +699,9 @@ class SpaceInvaders(object):
             self.shipTimer = time.get_ticks()
             self.shipAlive = False
 
-        if self.enemies.bottom >= 540:
+        if self.enemies.bottom >= 1540:
             sprite.groupcollide(self.enemies, self.playerGroup, True, True)
-            if not self.player.alive() or self.enemies.bottom >= 600:
+            if not self.player.alive() or self.enemies.bottom >= 1600:
                 self.gameOver = True
                 self.startGame = False
 
@@ -551,6 +719,8 @@ class SpaceInvaders(object):
             self.shipAlive = True
 
     def create_game_over(self, currentTime):
+        global ROUND
+        ROUND = 0
         self.screen.blit(self.background, (0, 0))
         passed = currentTime - self.timer
         if passed < 750:
@@ -561,28 +731,49 @@ class SpaceInvaders(object):
             self.gameOverText.draw(self.screen)
         elif 2250 < passed < 2750:
             self.screen.blit(self.background, (0, 0))
-        elif passed > 3000:
-            self.mainScreen = True
+        elif 3000 < passed < 6750:
+            self.gameOverText.draw(self.screen)
+            self.finalScoreText2 = Text(FONT, 50, str(self.score), YELLOW, 950, 1310)
+            self.finalScoreText.draw(self.screen)
+            self.finalScoreText2.draw(self.screen)
+        elif passed > 7000:
+            self.finalScoreText.draw(self.screen)
+            self.finalScoreText2.draw(self.screen)
+            self.goBackText = Text(FONT, 50, "Press circle to reset the game", WHITE, 200, 1450)
+            self.goBackText.draw(self.screen)
 
+
+        
+        # with open(os.path.join("leaderboard.json"), 'r+') as file:
+        #     leaderboard = json.load(file)
+
+        # input = NameInput(self.screen)
         for e in event.get():
             if self.should_exit(e):
                 sys.exit()
-
+            elif self.should_reset(e) and passed > 7000:
+                self.mainScreen = True	
+            # elif e.type == JOYBUTTONUP:
+            #     input.handle_input(e.button)
+ 
     def main(self):
+        global ROUND
         while True:
             if self.mainScreen:
                 self.screen.blit(self.background, (0, 0))
                 self.titleText.draw(self.screen)
                 self.titleText2.draw(self.screen)
+                self.titleText3.draw(self.screen)
                 self.enemy1Text.draw(self.screen)
                 self.enemy2Text.draw(self.screen)
                 self.enemy3Text.draw(self.screen)
                 self.enemy4Text.draw(self.screen)
                 self.create_main_menu()
+
                 for e in event.get():
                     if self.should_exit(e):
                         sys.exit()
-                    if e.type == KEYUP:
+                    if e.type == KEYUP or e.type == JOYBUTTONUP:
                         # Only create blockers on a new game, not a new round
                         self.allBlockers = sprite.Group(self.make_blockers(0),
                                                         self.make_blockers(1),
@@ -592,14 +783,13 @@ class SpaceInvaders(object):
                         self.reset(0)
                         self.startGame = True
                         self.mainScreen = False
-
             elif self.startGame:
                 if not self.enemies and not self.explosionsGroup:
                     currentTime = time.get_ticks()
                     if currentTime - self.gameTimer < 3000:
                         self.screen.blit(self.background, (0, 0))
-                        self.scoreText2 = Text(FONT, 20, str(self.score),
-                                               GREEN, 85, 5)
+                        self.scoreText2 = Text(FONT, 35, str(self.score),
+                                               YELLOW, 600, 600)
                         self.scoreText.draw(self.screen)
                         self.scoreText2.draw(self.screen)
                         self.nextRoundText.draw(self.screen)
@@ -616,14 +806,14 @@ class SpaceInvaders(object):
                     self.play_main_music(currentTime)
                     self.screen.blit(self.background, (0, 0))
                     self.allBlockers.update(self.screen)
-                    self.scoreText2 = Text(FONT, 20, str(self.score), GREEN,
-                                           85, 5)
+                    self.scoreText2 = Text(FONT, 35, str(self.score), YELLOW,
+                                           600, 600)
                     self.scoreText.draw(self.screen)
                     self.scoreText2.draw(self.screen)
                     self.livesText.draw(self.screen)
                     self.check_input()
                     self.enemies.update(currentTime)
-                    self.allSprites.update(self.keys, currentTime)
+                    self.allSprites.update(self.keys, self.buttons, currentTime)
                     self.explosionsGroup.update(currentTime)
                     self.check_collisions()
                     self.create_new_ship(self.makeNewShip, currentTime)
